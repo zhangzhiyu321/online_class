@@ -121,7 +121,19 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-const unreadCount = ref(0) // TODO: 从 WebSocket 或 API 获取未读消息数
+const unreadCount = ref(0)
+
+// 加载未读消息数
+const loadUnreadCount = async () => {
+  try {
+    const { getUnreadCount } = await import('@/api/chat')
+    const data = await getUnreadCount()
+    unreadCount.value = data.count || data.total || 0
+  } catch (error) {
+    console.error('加载未读消息数失败:', error)
+    unreadCount.value = 0
+  }
+}
 
 // 路由映射表
 const routeMap = {
@@ -253,6 +265,19 @@ const handleCommand = (command) => {
 onMounted(() => {
   if (!userStore.userInfo) {
     userStore.loadUserInfo()
+  }
+  // 加载未读消息数
+  loadUnreadCount()
+  // 定期刷新未读消息数（每30秒）
+  const unreadTimer = setInterval(() => {
+    if (userStore.isAuthenticated()) {
+      loadUnreadCount()
+    }
+  }, 30000)
+  
+  // 清理定时器
+  return () => {
+    clearInterval(unreadTimer)
   }
 })
 </script>

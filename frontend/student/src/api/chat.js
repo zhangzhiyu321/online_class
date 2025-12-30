@@ -25,3 +25,13 @@ export const markMessageRead = (relationshipId) => {
   return request.put(`/chat/relationship/${relationshipId}/read`)
 }
 
+// 获取聊天关系详情
+export const getChatRelationship = (relationshipId) => {
+  return request.get(`/chat/relationship/${relationshipId}`)
+}
+
+// 获取未读消息数
+export const getUnreadCount = () => {
+  return request.get('/chat/unread-count')
+}
+

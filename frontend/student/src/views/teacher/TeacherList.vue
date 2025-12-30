@@ -447,13 +447,24 @@ onMounted(() => {
   }
 
   .filter-options {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
   }
 
-  .filter-options .el-select,
-  .filter-options .el-button {
+  .filter-options .el-select {
+    flex: 1;
+    min-width: 0;
+    width: auto !important;
+  }
+
+  .filter-options .el-select :deep(.el-input__wrapper) {
     width: 100%;
+  }
+
+  .filter-options .el-button {
+    flex-shrink: 0;
   }
 
   .page-title {
