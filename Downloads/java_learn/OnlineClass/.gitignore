@@ -83,3 +83,8 @@ site/
 *.pid
 *.seed
 *.pid.lock
+
+# Spring Boot 敏感配置文件
+onlineClass_backend/src/main/resources/application.properties
+onlineClass_backend/src/main/resources/application-*.properties
+!onlineClass_backend/src/main/resources/application.properties.example
