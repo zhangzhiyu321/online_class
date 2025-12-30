@@ -50,6 +50,7 @@ CREATE TABLE `users` (
 - `extra` 字段可存储角色特定信息（如学生年级、教师经验年限等）
 - `online_status` 用于实时聊天功能
 - 不使用物理外键，所有关联通过 `user_id` 逻辑关联
+- 新增 `email` 字段索引，提升查询性能
 
 ---
 
@@ -88,7 +89,40 @@ CREATE TABLE `teacher_profiles` (
 
 ---
 
-### 2.3 学历认证表 (teacher_certifications)
+### 2.3 学生扩展信息表 (student_profiles) ⭐新增
+
+**功能**：存储学生特有的详细信息
+
+```sql
+CREATE TABLE `student_profiles` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '用户ID（逻辑外键）',
+  `real_name` VARCHAR(50) DEFAULT NULL COMMENT '真实姓名',
+  `grade` VARCHAR(50) DEFAULT NULL COMMENT '年级',
+  `school_name` VARCHAR(200) DEFAULT NULL COMMENT '学校名称',
+  `learning_goals` TEXT DEFAULT NULL COMMENT '学习目标',
+  `weak_subjects` JSON DEFAULT NULL COMMENT '薄弱科目（JSON数组）',
+  `parent_name` VARCHAR(50) DEFAULT NULL COMMENT '家长姓名',
+  `parent_phone` VARCHAR(20) DEFAULT NULL COMMENT '家长电话',
+  `extra` JSON DEFAULT NULL COMMENT '扩展信息',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_user_id` (`user_id`),
+  KEY `idx_grade` (`grade`),
+  KEY `idx_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='学生扩展信息表';
+```
+
+**设计说明**：
+- 与用户表一对一关系，通过 `user_id` 关联
+- 存储学生特有的学习信息、家长联系方式等
+- 与教师扩展信息表对应，保持设计一致性
+
+---
+
+### 2.4 学历认证表 (teacher_certifications)
 
 **功能**：存储教师学历认证信息
 
@@ -125,7 +159,7 @@ CREATE TABLE `teacher_certifications` (
 
 ---
 
-### 2.4 教学阶段字典表 (teaching_stages)
+### 2.5 教学阶段字典表 (teaching_stages)
 
 **功能**：存储可配置的教学阶段（小学、初中、高中等）
 
@@ -156,7 +190,7 @@ INSERT INTO `teaching_stages` (`code`, `name`, `sort_order`) VALUES
 
 ---
 
-### 2.5 科目字典表 (subjects)
+### 2.6 科目字典表 (subjects)
 
 **功能**：存储可配置的教学科目
 
@@ -185,12 +219,16 @@ INSERT INTO `subjects` (`code`, `name`, `category`, `sort_order`) VALUES
 ('CHINESE', '语文', '文科', 2),
 ('ENGLISH', '英语', '外语', 3),
 ('PHYSICS', '物理', '理科', 4),
-('CHEMISTRY', '化学', '理科', 5);
+('CHEMISTRY', '化学', '理科', 5),
+('BIOLOGY', '生物', '理科', 6),
+('HISTORY', '历史', '文科', 7),
+('GEOGRAPHY', '地理', '文科', 8),
+('POLITICS', '政治', '文科', 9);
 ```
 
 ---
 
-### 2.6 教师教学信息表 (teacher_teachings)
+### 2.7 教师教学信息表 (teacher_teachings)
 
 **功能**：存储教师可教授的阶段、科目及价格（多对多关系）
 
@@ -222,7 +260,7 @@ CREATE TABLE `teacher_teachings` (
 
 ---
 
-### 2.7 教师空闲时间表 (teacher_schedules)
+### 2.8 教师空闲时间表 (teacher_schedules)
 
 **功能**：存储教师可授课时间段
 
@@ -256,7 +294,7 @@ CREATE TABLE `teacher_schedules` (
 
 ---
 
-### 2.8 预约表 (appointments)
+### 2.9 预约表 (appointments)
 
 **功能**：存储学生预约课程信息
 
@@ -309,7 +347,7 @@ CREATE TABLE `appointments` (
 
 ---
 
-### 2.9 支付记录表 (payments)
+### 2.10 支付记录表 (payments) ⭐增强
 
 **功能**：存储支付相关信息
 
@@ -321,6 +359,7 @@ CREATE TABLE `payments` (
   `student_id` BIGINT UNSIGNED NOT NULL COMMENT '学生用户ID',
   `teacher_id` BIGINT UNSIGNED NOT NULL COMMENT '教师用户ID',
   `amount` DECIMAL(10,2) NOT NULL COMMENT '支付金额',
+  `payment_method` TINYINT NOT NULL DEFAULT 1 COMMENT '支付方式：1-银行转账，2-支付宝，3-微信，4-其他',
   `transfer_image` VARCHAR(500) DEFAULT NULL COMMENT '转账截图URL',
   `transfer_time` DATETIME DEFAULT NULL COMMENT '转账时间',
   `transfer_account` VARCHAR(100) DEFAULT NULL COMMENT '转账账号',
@@ -339,6 +378,7 @@ CREATE TABLE `payments` (
   KEY `idx_student_id` (`student_id`),
   KEY `idx_teacher_id` (`teacher_id`),
   KEY `idx_status` (`status`),
+  KEY `idx_payment_method` (`payment_method`),
   KEY `idx_created_at` (`created_at`),
   KEY `idx_deleted_at` (`deleted_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='支付记录表';
@@ -348,10 +388,55 @@ CREATE TABLE `payments` (
 - 与预约表一对一关系（一个预约对应一个支付记录）
 - 完整记录转账凭证信息
 - 支持教师拒绝收款并退回待支付状态
+- 新增 `payment_method` 字段，支持多种支付方式扩展
 
 ---
 
-### 2.10 评价表 (reviews)
+### 2.11 退款记录表 (refunds) ⭐新增
+
+**功能**：存储退款相关信息
+
+```sql
+CREATE TABLE `refunds` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `refund_no` VARCHAR(50) NOT NULL COMMENT '退款单号（唯一）',
+  `payment_id` BIGINT UNSIGNED NOT NULL COMMENT '支付记录ID',
+  `appointment_id` BIGINT UNSIGNED NOT NULL COMMENT '预约ID',
+  `student_id` BIGINT UNSIGNED NOT NULL COMMENT '学生用户ID',
+  `teacher_id` BIGINT UNSIGNED NOT NULL COMMENT '教师用户ID',
+  `refund_amount` DECIMAL(10,2) NOT NULL COMMENT '退款金额',
+  `refund_reason` VARCHAR(500) DEFAULT NULL COMMENT '退款原因',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '退款状态：1-待审核，2-已通过，3-已拒绝，4-已完成',
+  `audit_user_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '审核人ID（管理员）',
+  `audit_reason` VARCHAR(500) DEFAULT NULL COMMENT '审核意见',
+  `audit_at` DATETIME DEFAULT NULL COMMENT '审核时间',
+  `refund_time` DATETIME DEFAULT NULL COMMENT '退款时间',
+  `refund_account` VARCHAR(100) DEFAULT NULL COMMENT '退款账号',
+  `extra` JSON DEFAULT NULL COMMENT '扩展信息',
+  `version` INT UNSIGNED NOT NULL DEFAULT 1 COMMENT '版本号',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_refund_no` (`refund_no`),
+  KEY `idx_payment_id` (`payment_id`),
+  KEY `idx_appointment_id` (`appointment_id`),
+  KEY `idx_student_id` (`student_id`),
+  KEY `idx_teacher_id` (`teacher_id`),
+  KEY `idx_status` (`status`),
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='退款记录表';
+```
+
+**设计说明**：
+- 与支付记录表关联，支持退款流程
+- 完整记录退款审核流程（管理员审核）
+- 支持退款状态追踪和查询
+
+---
+
+### 2.12 评价表 (reviews)
 
 **功能**：存储学生对教师的评价
 
@@ -386,7 +471,7 @@ CREATE TABLE `reviews` (
 
 ---
 
-### 2.11 聊天关系表 (chat_relationships)
+### 2.13 聊天关系表 (chat_relationships)
 
 **功能**：存储用户之间的聊天关系
 
@@ -424,7 +509,7 @@ CREATE TABLE `chat_relationships` (
 
 ---
 
-### 2.12 聊天消息表 (chat_messages)
+### 2.14 聊天消息表 (chat_messages)
 
 **功能**：存储聊天消息内容
 
@@ -470,7 +555,7 @@ CREATE TABLE `chat_messages` (
 
 ---
 
-### 2.13 通话记录表 (call_records)
+### 2.15 通话记录表 (call_records)
 
 **功能**：存储语音/视频通话记录
 
@@ -507,7 +592,7 @@ CREATE TABLE `call_records` (
 
 ---
 
-### 2.14 公告表 (announcements)
+### 2.16 公告表 (announcements)
 
 **功能**：存储系统公告信息
 
@@ -548,7 +633,7 @@ CREATE TABLE `announcements` (
 
 ---
 
-### 2.15 系统配置表 (system_configs)
+### 2.17 系统配置表 (system_configs)
 
 **功能**：存储系统配置信息
 
@@ -575,24 +660,267 @@ CREATE TABLE `system_configs` (
 
 **初始数据示例**：
 ```sql
-INSERT INTO `system_configs` (`config_key`, `config_value`, `config_type`, `description`, `group_name`) VALUES
-('platform_name', '线上家教平台', 'string', '平台名称', 'basic'),
-('contact_phone', '400-xxx-xxxx', 'string', '客服电话', 'basic'),
-('service_hours', '09:00-18:00', 'string', '服务时间', 'basic'),
-('max_voice_duration', '300', 'number', '语音消息最大时长（秒）', 'chat'),
-('max_image_size', '10485760', 'number', '图片最大大小（字节）', 'chat'),
-('max_file_size', '52428800', 'number', '文件最大大小（字节）', 'chat');
+INSERT INTO `system_configs` (`config_key`, `config_value`, `config_type`, `description`, `group_name`, `sort_order`) VALUES
+('platform_name', '线上家教平台', 'string', '平台名称', 'basic', 1),
+('contact_phone', '400-xxx-xxxx', 'string', '客服电话', 'basic', 2),
+('service_hours', '09:00-18:00', 'string', '服务时间', 'basic', 3),
+('max_voice_duration', '300', 'number', '语音消息最大时长（秒）', 'chat', 1),
+('max_image_size', '10485760', 'number', '图片最大大小（字节）', 'chat', 2),
+('max_file_size', '52428800', 'number', '文件最大大小（字节）', 'chat', 3),
+('message_recall_time', '120', 'number', '消息撤回时间限制（秒）', 'chat', 4),
+('min_appointment_hours', '1', 'number', '最小预约时长（小时）', 'appointment', 1),
+('max_appointment_hours', '4', 'number', '最大预约时长（小时）', 'appointment', 2),
+('appointment_advance_days', '7', 'number', '可预约提前天数', 'appointment', 3);
 ```
 
 ---
 
-## 三、表关系说明
+### 2.18 操作日志表 (operation_logs) ⭐新增
+
+**功能**：记录系统关键操作，便于审计和问题追踪
+
+```sql
+CREATE TABLE `operation_logs` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `user_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '操作用户ID',
+  `username` VARCHAR(50) DEFAULT NULL COMMENT '操作用户名',
+  `operation_type` VARCHAR(50) NOT NULL COMMENT '操作类型：login、logout、create、update、delete等',
+  `module` VARCHAR(50) DEFAULT NULL COMMENT '操作模块：user、appointment、payment等',
+  `content` TEXT DEFAULT NULL COMMENT '操作内容描述',
+  `request_method` VARCHAR(10) DEFAULT NULL COMMENT '请求方法：GET、POST等',
+  `request_url` VARCHAR(500) DEFAULT NULL COMMENT '请求URL',
+  `request_params` JSON DEFAULT NULL COMMENT '请求参数（JSON格式）',
+  `ip_address` VARCHAR(50) DEFAULT NULL COMMENT 'IP地址',
+  `user_agent` VARCHAR(500) DEFAULT NULL COMMENT '用户代理',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '操作状态：1-成功，2-失败',
+  `error_message` TEXT DEFAULT NULL COMMENT '错误信息',
+  `execution_time` INT DEFAULT NULL COMMENT '执行时间（毫秒）',
+  `extra` JSON DEFAULT NULL COMMENT '扩展信息',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_operation_type` (`operation_type`),
+  KEY `idx_module` (`module`),
+  KEY `idx_status` (`status`),
+  KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='操作日志表';
+```
+
+**设计说明**：
+- 记录所有关键操作，包括登录、数据修改等
+- 记录请求信息、IP地址、执行时间等，便于问题排查
+- 支持按用户、操作类型、模块等维度查询
+- 不进行软删除，保留完整审计记录
+
+---
+
+### 2.19 通知表 (notifications) ⭐新增
+
+**功能**：存储系统消息通知
+
+```sql
+CREATE TABLE `notifications` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `user_id` BIGINT UNSIGNED NOT NULL COMMENT '接收用户ID',
+  `type` TINYINT NOT NULL DEFAULT 1 COMMENT '通知类型：1-系统通知，2-预约通知，3-支付通知，4-评价通知，5-聊天通知',
+  `title` VARCHAR(200) NOT NULL COMMENT '通知标题',
+  `content` TEXT DEFAULT NULL COMMENT '通知内容',
+  `related_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '关联ID（如预约ID、支付ID等）',
+  `related_type` VARCHAR(50) DEFAULT NULL COMMENT '关联类型：appointment、payment等',
+  `is_read` TINYINT NOT NULL DEFAULT 0 COMMENT '是否已读：0-未读，1-已读',
+  `read_at` DATETIME DEFAULT NULL COMMENT '已读时间',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：1-正常，2-已删除',
+  `extra` JSON DEFAULT NULL COMMENT '扩展信息',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_type` (`type`),
+  KEY `idx_is_read` (`is_read`),
+  KEY `idx_related` (`related_type`, `related_id`),
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='通知表';
+```
+
+**设计说明**：
+- 支持多种通知类型，便于分类管理
+- 通过 `related_id` 和 `related_type` 关联业务数据
+- 支持已读/未读状态，便于消息提醒
+- 索引设计支持按用户、类型、已读状态等维度查询
+
+---
+
+### 2.20 文件上传记录表 (file_uploads) ⭐新增
+
+**功能**：统一管理文件上传记录
+
+```sql
+CREATE TABLE `file_uploads` (
+  `id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT 'ID',
+  `user_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '上传用户ID',
+  `file_name` VARCHAR(255) NOT NULL COMMENT '原始文件名',
+  `file_path` VARCHAR(500) NOT NULL COMMENT '文件存储路径',
+  `file_url` VARCHAR(500) NOT NULL COMMENT '文件访问URL',
+  `file_type` VARCHAR(50) DEFAULT NULL COMMENT '文件类型：image、document、video、audio等',
+  `file_size` BIGINT NOT NULL COMMENT '文件大小（字节）',
+  `mime_type` VARCHAR(100) DEFAULT NULL COMMENT 'MIME类型',
+  `file_hash` VARCHAR(64) DEFAULT NULL COMMENT '文件哈希值（用于去重）',
+  `upload_source` VARCHAR(50) DEFAULT NULL COMMENT '上传来源：avatar、certificate、message等',
+  `related_id` BIGINT UNSIGNED DEFAULT NULL COMMENT '关联ID',
+  `related_type` VARCHAR(50) DEFAULT NULL COMMENT '关联类型',
+  `status` TINYINT NOT NULL DEFAULT 1 COMMENT '状态：1-正常，2-已删除',
+  `extra` JSON DEFAULT NULL COMMENT '扩展信息',
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '上传时间',
+  `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `deleted_at` DATETIME DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_file_type` (`file_type`),
+  KEY `idx_upload_source` (`upload_source`),
+  KEY `idx_related` (`related_type`, `related_id`),
+  KEY `idx_file_hash` (`file_hash`),
+  KEY `idx_created_at` (`created_at`),
+  KEY `idx_deleted_at` (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='文件上传记录表';
+```
+
+**设计说明**：
+- 统一管理所有文件上传，包括头像、证书、聊天文件等
+- 通过 `file_hash` 支持文件去重
+- 通过 `upload_source` 区分上传来源
+- 支持关联业务数据，便于文件管理
+
+---
+
+## 三、业务流程说明
+
+### 3.1 学生端业务流程
+
+#### 3.1.1 注册与认证流程
+1. **注册** → `users` 表创建记录（role=1，status=1）
+2. **完善信息** → `student_profiles` 表创建/更新记录
+3. **登录** → 更新 `users.last_login_at`、`users.last_login_ip`，记录 `operation_logs`
+
+#### 3.1.2 预约流程
+1. **浏览教师** → 查询 `teacher_profiles`、`teacher_teachings`、`teacher_certifications`、`reviews`
+2. **创建预约** → `appointments` 表创建记录（status=1 待确认）
+   - 同时创建 `payments` 记录（status=1 待支付）
+   - 创建 `notifications` 通知教师
+   - 记录 `operation_logs`
+3. **教师确认** → `appointments.status=2`（已确认），更新 `appointments.confirmed_at`
+   - 创建 `chat_relationships` 聊天关系
+   - 创建 `notifications` 通知学生
+4. **支付** → `payments.status=2`（待确认），上传转账凭证
+   - 更新 `payments.transfer_image`、`payments.transfer_time`、`payments.transfer_account`
+   - 创建 `notifications` 通知教师
+5. **教师确认收款** → `payments.status=3`（已完成），更新 `payments.confirmed_at`、`payments.confirmed_by`
+   - 创建 `notifications` 通知学生
+6. **课程完成** → `appointments.status=3`（已完成），更新 `appointments.completed_at`
+   - 创建 `notifications` 通知学生可评价
+7. **评价** → `reviews` 表创建记录
+   - 更新 `teacher_profiles.rating`、`teacher_profiles.rating_count`
+   - 创建 `notifications` 通知教师
+
+#### 3.1.3 取消预约流程
+1. **学生取消** → `appointments.status=4`（已取消），更新 `appointments.cancel_reason`、`appointments.cancel_by`、`appointments.cancel_at`
+   - 如果已支付，可申请退款 → `refunds` 表创建记录（status=1 待审核）
+   - 创建 `notifications` 通知教师
+
+#### 3.1.4 退款流程
+1. **申请退款** → `refunds` 表创建记录（status=1 待审核）
+   - 创建 `notifications` 通知管理员
+2. **管理员审核** → `refunds.status=2`（已通过）或 `refunds.status=3`（已拒绝）
+   - 更新 `refunds.audit_user_id`、`refunds.audit_reason`、`refunds.audit_at`
+   - 创建 `notifications` 通知学生
+3. **退款完成** → `refunds.status=4`（已完成），更新 `refunds.refund_time`、`refunds.refund_account`
+
+#### 3.1.5 聊天流程
+1. **建立聊天关系** → 预约确认时自动创建 `chat_relationships` 记录
+2. **发送消息** → `chat_messages` 表创建记录
+   - 更新 `chat_relationships.last_message_id`、`chat_relationships.last_message_time`
+   - 更新 `chat_relationships.user2_unread_count`（接收方未读数+1）
+   - 文件消息同时记录到 `file_uploads` 表
+3. **消息已读** → 更新 `chat_messages.is_read=1`、`chat_messages.read_at`
+   - 更新 `chat_relationships.user2_unread_count`（未读数清零）
+4. **消息撤回** → 更新 `chat_messages.is_recalled=1`、`chat_messages.recalled_at`（2分钟内可撤回）
+
+### 3.2 教师端业务流程
+
+#### 3.2.1 注册与认证流程
+1. **注册** → `users` 表创建记录（role=2，status=1）
+2. **完善信息** → `teacher_profiles` 表创建/更新记录
+3. **上传认证** → `teacher_certifications` 表创建记录（status=1 待审核）
+   - 文件记录到 `file_uploads` 表
+   - 创建 `notifications` 通知管理员
+4. **管理员审核** → `teacher_certifications.status=2`（已通过）或 `status=3`（已拒绝）
+   - 更新 `teacher_certifications.audit_user_id`、`teacher_certifications.audit_reason`、`teacher_certifications.audit_at`
+   - 创建 `notifications` 通知教师
+5. **设置教学信息** → `teacher_teachings` 表创建/更新记录
+6. **设置空闲时间** → `teacher_schedules` 表创建/更新记录
+
+#### 3.2.2 接单流程
+1. **接收预约** → 查询 `appointments` 表（status=1 待确认）
+2. **确认预约** → `appointments.status=2`（已确认），更新 `appointments.confirmed_at`
+   - 创建 `chat_relationships` 聊天关系
+   - 创建 `notifications` 通知学生
+3. **确认收款** → `payments.status=3`（已完成），更新 `payments.confirmed_at`、`payments.confirmed_by`
+   - 创建 `notifications` 通知学生
+4. **拒绝收款** → `payments.status=4`（已拒绝），更新 `payments.reject_reason`
+   - 创建 `notifications` 通知学生重新支付
+
+#### 3.2.3 查看评价
+- 查询 `reviews` 表，按 `teacher_id` 筛选
+- 查看 `teacher_profiles.rating` 综合评分
+
+### 3.3 管理员端业务流程
+
+#### 3.3.1 用户管理
+1. **查看用户列表** → 查询 `users` 表，按 `role`、`status` 筛选
+2. **禁用/启用账号** → 更新 `users.status`
+   - 记录 `operation_logs`
+3. **查看用户详情** → 根据 `role` 关联查询 `teacher_profiles` 或 `student_profiles`
+
+#### 3.3.2 认证审核
+1. **查看待审核列表** → 查询 `teacher_certifications` 表（status=1）
+2. **审核认证** → 更新 `teacher_certifications.status`、`audit_user_id`、`audit_reason`、`audit_at`
+   - 创建 `notifications` 通知教师
+   - 记录 `operation_logs`
+
+#### 3.3.3 退款审核
+1. **查看待审核退款** → 查询 `refunds` 表（status=1）
+2. **审核退款** → 更新 `refunds.status`、`audit_user_id`、`audit_reason`、`audit_at`
+   - 创建 `notifications` 通知学生
+   - 记录 `operation_logs`
+
+#### 3.3.4 系统管理
+1. **公告管理** → `announcements` 表的增删改查
+2. **系统配置** → `system_configs` 表的增删改查
+3. **操作日志查询** → 查询 `operation_logs` 表，支持多维度筛选
+
+### 3.4 数据安全与日志
+
+#### 3.4.1 操作日志记录
+- **登录/登出** → 记录 `operation_logs`（operation_type=login/logout）
+- **数据修改** → 记录 `operation_logs`（operation_type=create/update/delete）
+- **关键业务操作** → 记录 `operation_logs`（如确认预约、确认收款、审核认证等）
+
+#### 3.4.2 数据安全
+- **乐观锁** → 关键业务表使用 `version` 字段，防止并发更新冲突
+- **软删除** → 所有表使用 `deleted_at` 实现软删除，保留历史数据
+- **状态管理** → 完整的状态流转，确保业务流程正确
+
+---
+
+## 四、表关系说明
 
 ### 3.1 核心关系图
 
 ```
 users (用户表)
   ├── teacher_profiles (教师扩展信息) [1:1]
+  ├── student_profiles (学生扩展信息) [1:1] ⭐新增
   ├── teacher_certifications (学历认证) [1:N]
   ├── teacher_teachings (教学信息) [1:N]
   │     ├── teaching_stages (教学阶段) [N:1]
@@ -601,18 +929,32 @@ users (用户表)
   ├── appointments (预约) [1:N] (作为student_id)
   ├── appointments (预约) [1:N] (作为teacher_id)
   ├── payments (支付) [1:N] (作为student_id/teacher_id)
+  ├── refunds (退款) [1:N] (作为student_id/teacher_id) ⭐新增
   ├── reviews (评价) [1:N] (作为student_id/teacher_id)
   ├── chat_relationships (聊天关系) [1:N] (作为user1_id/user2_id)
+  ├── chat_messages (聊天消息) [1:N] (作为sender_id/receiver_id)
   ├── call_records (通话记录) [1:N] (作为caller_id/receiver_id)
+  ├── notifications (通知) [1:N] (作为user_id) ⭐新增
+  ├── file_uploads (文件上传) [1:N] (作为user_id) ⭐新增
+  ├── operation_logs (操作日志) [1:N] (作为user_id) ⭐新增
   └── announcements (公告) [1:N] (作为created_by/updated_by)
 
 appointments (预约表)
   ├── payments (支付记录) [1:1]
+  ├── refunds (退款记录) [1:N] ⭐新增
   ├── reviews (评价) [1:1]
   └── chat_relationships (聊天关系) [1:1]
 
+payments (支付记录表)
+  └── refunds (退款记录) [1:N] ⭐新增
+
 chat_relationships (聊天关系表)
   └── chat_messages (聊天消息) [1:N]
+
+file_uploads (文件上传表)
+  ├── teacher_certifications (证书图片) [N:1]
+  ├── chat_messages (聊天文件) [N:1]
+  └── reviews (评价图片) [N:1]
 ```
 
 ### 3.2 关键设计点
@@ -627,7 +969,7 @@ chat_relationships (聊天关系表)
 
 ---
 
-## 四、索引设计说明
+## 五、索引设计说明
 
 ### 4.1 索引策略
 
@@ -647,7 +989,7 @@ chat_relationships (聊天关系表)
 
 ---
 
-## 五、数据迁移和扩展建议
+## 六、数据迁移和扩展建议
 
 ### 5.1 扩展性设计
 
@@ -663,7 +1005,7 @@ chat_relationships (聊天关系表)
 
 ---
 
-## 六、总结
+## 七、总结
 
 本数据库设计遵循以下原则：
 
@@ -674,4 +1016,58 @@ chat_relationships (聊天关系表)
 ✅ **易于维护**：清晰的表结构、完整的注释  
 
 该设计能够满足当前业务需求，同时为未来功能扩展预留了充足的空间。
+
+---
+
+## 八、业务流程完整性检查 ✅
+
+### 8.1 学生端流程完整性
+
+✅ **注册登录** → users表 + student_profiles表 + operation_logs表  
+✅ **浏览教师** → teacher_profiles + teacher_teachings + teacher_certifications + reviews  
+✅ **创建预约** → appointments表 + payments表 + notifications表 + operation_logs表  
+✅ **支付流程** → payments表状态流转 + notifications表通知  
+✅ **课程完成** → appointments表状态更新 + notifications表通知评价  
+✅ **评价功能** → reviews表 + teacher_profiles评分更新 + notifications表  
+✅ **取消预约** → appointments表状态更新 + refunds表（如需退款）  
+✅ **退款流程** → refunds表完整审核流程 + notifications表  
+✅ **聊天功能** → chat_relationships表 + chat_messages表 + file_uploads表  
+✅ **查看通知** → notifications表查询和已读状态管理  
+
+### 8.2 教师端流程完整性
+
+✅ **注册登录** → users表 + teacher_profiles表 + operation_logs表  
+✅ **上传认证** → teacher_certifications表 + file_uploads表 + notifications表  
+✅ **设置教学信息** → teacher_teachings表 + teacher_schedules表  
+✅ **接收预约** → appointments表查询和确认 + notifications表  
+✅ **确认收款** → payments表状态更新 + notifications表  
+✅ **查看评价** → reviews表查询 + teacher_profiles评分展示  
+✅ **聊天功能** → chat_relationships表 + chat_messages表  
+
+### 8.3 管理员端流程完整性
+
+✅ **用户管理** → users表查询和状态管理 + operation_logs表  
+✅ **认证审核** → teacher_certifications表审核 + notifications表 + operation_logs表  
+✅ **退款审核** → refunds表审核 + notifications表 + operation_logs表  
+✅ **公告管理** → announcements表增删改查 + operation_logs表  
+✅ **系统配置** → system_configs表管理 + operation_logs表  
+✅ **日志查询** → operation_logs表多维度查询  
+
+### 8.4 数据安全与审计
+
+✅ **操作日志** → 所有关键操作记录到operation_logs表  
+✅ **乐观锁** → 关键业务表使用version字段防止并发冲突  
+✅ **软删除** → 所有表使用deleted_at保留历史数据  
+✅ **状态管理** → 完整的状态流转，确保业务流程正确  
+✅ **文件管理** → 统一通过file_uploads表管理，支持去重和关联  
+
+### 8.5 通知系统
+
+✅ **预约通知** → 预约创建、确认、完成时创建notifications  
+✅ **支付通知** → 支付状态变更时创建notifications  
+✅ **审核通知** → 认证审核、退款审核时创建notifications  
+✅ **评价通知** → 评价提交时创建notifications  
+✅ **系统通知** → 公告发布等系统级通知  
+
+**结论**：所有业务流程已形成完整闭环，数据表设计支持学生端、教师端、管理员端的所有功能需求，并具备完善的日志记录和通知机制。
 
