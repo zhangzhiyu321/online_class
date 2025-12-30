@@ -1,0 +1,556 @@
+@import './base.css';
+
+/* 全局样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+    'Noto Color Emoji';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-bgSecondary, #f5f7fa);
+  color: var(--color-textPrimary, #1a1a1a);
+  transition: background-color 0.3s ease, color 0.3s ease;
+  min-height: 100vh;
+  position: relative;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+/* 响应式断点 */
+@media (max-width: 767px) {
+  /* 移动端样式 */
+  .container {
+    padding: 0 12px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* 平板样式 */
+  .container {
+    padding: 0 16px;
+  }
+}
+
+@media (min-width: 1025px) {
+  /* 桌面端样式 */
+  .container {
+    padding: 0 20px;
+  }
+}
+
+/* 通用工具类 */
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.mt-20 {
+  margin-top: 20px;
+}
+
+.mb-10 {
+  margin-bottom: 10px;
+}
+
+.mb-20 {
+  margin-bottom: 20px;
+}
+
+/* ========== 全局圆角变量 ========== */
+:root {
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  
+  /* 简约灰白风格变量 */
+  --glass-bg: #ffffff;
+  --glass-bg-dark: #ffffff;
+  --glass-border: #e5e7eb;
+  --glass-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --glass-backdrop: none;
+  --glass-backdrop-strong: none;
+}
+
+/* 滚动条样式 - 更圆润 */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 10px;
+  transition: background 0.15s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* ========== Calendly 风格动画和过渡效果（优化：缩短时间） ========== */
+
+/* 页面过渡动画 - 缩短到0.15s */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+/* 滑动过渡动画 - 缩短到0.15s */
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-enter-from {
+  transform: translateX(-20px);
+  opacity: 0;
+}
+
+.slide-leave-to {
+  transform: translateX(20px);
+  opacity: 0;
+}
+
+/* 缩放过渡动画 - 缩短到0.15s */
+.scale-enter-active,
+.scale-leave-active {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.scale-enter-from,
+.scale-leave-to {
+  transform: scale(0.95);
+  opacity: 0;
+}
+
+/* 按钮点击波纹效果 */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* 加载动画 */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* 骨架屏动画 */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* 平滑滚动 */
+html {
+  scroll-behavior: smooth;
+  /* 性能优化 */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 全局性能优化 - 仅对需要动画的元素启用 */
+.gpu-accelerated,
+.card-hover,
+.el-button,
+.el-card,
+.nav-item,
+.page-card {
+  /* 启用硬件加速 */
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+/* 优化滚动性能 */
+body {
+  overflow-x: hidden;
+  /* 减少重绘 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* 优化触摸滚动 */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 优化字体渲染 */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* 卡片悬停效果增强 - 缩短到0.15s，性能优化 */
+.card-hover {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  transform: translateZ(0); /* GPU加速 */
+}
+
+.card-hover:hover {
+  transform: translateY(-2px) translateZ(0);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* 性能优化：使用GPU加速的通用类 */
+.gpu-accelerated {
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* ========== ElMessage 自定义样式 - iOS 16 毛玻璃效果 ========== */
+.el-message {
+  border-radius: 16px !important;
+  padding: 14px 20px !important;
+  min-width: auto !important;
+  animation: messageBounce 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+  background: var(--glass-bg-dark) !important;
+  backdrop-filter: var(--glass-backdrop-strong) !important;
+  -webkit-backdrop-filter: var(--glass-backdrop-strong) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+  will-change: transform;
+}
+
+.el-message--success {
+  background-color: #f0fdf4 !important;
+  border-color: #86efac !important;
+}
+
+.el-message--error {
+  background-color: #fef2f2 !important;
+  border-color: #fca5a5 !important;
+}
+
+.el-message--warning {
+  background-color: #fffbeb !important;
+  border-color: #fde047 !important;
+}
+
+.el-message--info {
+  background-color: #eff6ff !important;
+  border-color: #93c5fd !important;
+}
+
+/* Q弹动画效果 */
+@keyframes messageBounce {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ElMessageBox 对话框圆角优化 */
+.el-message-box {
+  border-radius: 20px !important;
+  overflow: hidden !important;
+}
+
+.el-message-box__header {
+  padding: 20px 24px 16px !important;
+}
+
+.el-message-box__content {
+  padding: 0 24px 20px !important;
+}
+
+.el-message-box__btns {
+  padding: 16px 24px 20px !important;
+}
+
+.el-message-box__btns .el-button {
+  border-radius: 12px !important;
+  padding: 10px 20px !important;
+  transition: all 0.15s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+}
+
+.el-message-box__btns .el-button:hover {
+  transform: scale(1.05);
+}
+
+/* ElNotification 通知框圆角优化 - iOS 16 毛玻璃效果 */
+.el-notification {
+  border-radius: 16px !important;
+  animation: messageBounce 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+  background: var(--glass-bg-dark) !important;
+  backdrop-filter: var(--glass-backdrop-strong) !important;
+  -webkit-backdrop-filter: var(--glass-backdrop-strong) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+  will-change: transform;
+}
+
+/* 全局按钮圆角优化 - iOS 16 毛玻璃效果 */
+.el-button {
+  border-radius: 12px !important;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), 
+              background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-backdrop) !important;
+  -webkit-backdrop-filter: var(--glass-backdrop) !important;
+  border: 1px solid var(--glass-border) !important;
+  will-change: transform;
+}
+
+/* Primary 按钮样式 - 确保文字可见 */
+.el-button--primary {
+  background-color: var(--color-primary, #667eea) !important;
+  border-color: var(--color-primary, #667eea) !important;
+  color: #ffffff !important;
+}
+
+.el-button--primary:hover {
+  background-color: var(--color-primaryHover, #5568d3) !important;
+  border-color: var(--color-primaryHover, #5568d3) !important;
+  color: #ffffff !important;
+}
+
+.el-button--primary:active {
+  background-color: var(--color-primaryHover, #5568d3) !important;
+  border-color: var(--color-primaryHover, #5568d3) !important;
+  color: #ffffff !important;
+}
+
+.el-button:hover {
+  transform: translateY(-1px) scale(1.02);
+}
+
+.el-button:active {
+  transform: translateY(0) scale(0.98);
+}
+
+/* 输入框圆角优化 - iOS 16 毛玻璃效果 */
+.el-input__wrapper {
+  border-radius: 12px !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-backdrop) !important;
+  -webkit-backdrop-filter: var(--glass-backdrop) !important;
+  border: 1px solid var(--glass-border) !important;
+  will-change: transform;
+}
+
+.el-textarea__inner {
+  border-radius: 12px !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-backdrop) !important;
+  -webkit-backdrop-filter: var(--glass-backdrop) !important;
+}
+
+/* 卡片圆角优化 - iOS 16 毛玻璃效果 */
+.el-card {
+  border-radius: 20px !important;
+  overflow: hidden !important;
+  background: var(--glass-bg) !important;
+  backdrop-filter: var(--glass-backdrop) !important;
+  -webkit-backdrop-filter: var(--glass-backdrop) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+  will-change: transform;
+}
+
+.el-card__header {
+  border-radius: 20px 20px 0 0 !important;
+}
+
+/* 下拉菜单圆角优化 - iOS 16 毛玻璃效果 */
+.el-dropdown-menu {
+  border-radius: 16px !important;
+  padding: 8px !important;
+  background: var(--glass-bg-dark) !important;
+  backdrop-filter: var(--glass-backdrop-strong) !important;
+  -webkit-backdrop-filter: var(--glass-backdrop-strong) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+  will-change: transform;
+}
+
+.el-dropdown-menu__item {
+  border-radius: 12px !important;
+  margin: 2px 0 !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.el-dropdown-menu__item:hover {
+  transform: translateX(4px);
+}
+
+/* 选择器圆角优化 - iOS 16 毛玻璃效果 */
+.el-select-dropdown {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background: var(--glass-bg-dark) !important;
+  backdrop-filter: var(--glass-backdrop-strong) !important;
+  -webkit-backdrop-filter: var(--glass-backdrop-strong) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+}
+
+.el-select-dropdown__item {
+  border-radius: 8px !important;
+  margin: 2px 4px !important;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* 日期选择器圆角优化 - iOS 16 毛玻璃效果 */
+.el-picker__popper {
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background: var(--glass-bg-dark) !important;
+  backdrop-filter: var(--glass-backdrop-strong) !important;
+  -webkit-backdrop-filter: var(--glass-backdrop-strong) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+}
+
+/* 标签圆角优化 */
+.el-tag {
+  border-radius: 12px !important;
+}
+
+/* 徽章圆角优化 */
+.el-badge__content {
+  border-radius: 10px !important;
+}
+
+/* ========== 深色主题支持 ========== */
+body.theme-dark {
+  --color-primary: #818cf8;
+  --color-primaryHover: #6366f1;
+  --color-primaryLight: #312e81;
+  --color-bgPrimary: #1f2937;
+  --color-bgSecondary: #111827;
+  --color-bgTertiary: #0f172a;
+  --color-textPrimary: #f9fafb;
+  --color-textSecondary: #d1d5db;
+  --color-textTertiary: #9ca3af;
+  --color-textDisabled: #6b7280;
+  --color-borderPrimary: #374151;
+  --color-borderSecondary: #4b5563;
+  --color-success: #34d399;
+  --color-warning: #fbbf24;
+  --color-error: #f87171;
+  --color-info: #60a5fa;
+  --color-shadowSm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --color-shadowMd: 0 4px 6px rgba(0, 0, 0, 0.4);
+  --color-shadowLg: 0 10px 15px rgba(0, 0, 0, 0.5);
+  --glass-bg: #1f2937;
+  --glass-bg-dark: #1f2937;
+  --glass-border: #374151;
+  --glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+body.theme-dark {
+  background-color: var(--color-bgSecondary) !important;
+  color: var(--color-textPrimary) !important;
+}
+
+body.theme-dark .el-card {
+  background: var(--color-bgPrimary) !important;
+  border-color: var(--color-borderPrimary) !important;
+  color: var(--color-textPrimary) !important;
+}
+
+body.theme-dark .el-input__wrapper {
+  background: var(--color-bgPrimary) !important;
+  border-color: var(--color-borderPrimary) !important;
+  color: var(--color-textPrimary) !important;
+}
+
+body.theme-dark .el-textarea__inner {
+  background: var(--color-bgPrimary) !important;
+  border-color: var(--color-borderPrimary) !important;
+  color: var(--color-textPrimary) !important;
+}
+
+body.theme-dark .el-button {
+  background: var(--color-bgPrimary) !important;
+  border-color: var(--color-borderPrimary) !important;
+  color: var(--color-textPrimary) !important;
+}
+
+body.theme-dark .el-button:hover {
+  background: var(--color-borderPrimary) !important;
+  border-color: var(--color-borderSecondary) !important;
+}
+
+/* 深色主题下的 Primary 按钮样式 */
+body.theme-dark .el-button--primary {
+  background-color: var(--color-primary, #818cf8) !important;
+  border-color: var(--color-primary, #818cf8) !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark .el-button--primary:hover {
+  background-color: var(--color-primaryHover, #6366f1) !important;
+  border-color: var(--color-primaryHover, #6366f1) !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark .el-button--primary:active {
+  background-color: var(--color-primaryHover, #6366f1) !important;
+  border-color: var(--color-primaryHover, #6366f1) !important;
+  color: #ffffff !important;
+}
+
+body.theme-dark .el-menu-item {
+  background: var(--color-bgPrimary) !important;
+  color: var(--color-textPrimary) !important;
+}
+
+body.theme-dark .el-menu-item:hover {
+  background: var(--color-borderPrimary) !important;
+  color: var(--color-textPrimary) !important;
+}
+
+body.theme-dark .el-menu-item.is-active {
+  background: var(--color-borderPrimary) !important;
+  color: var(--color-textPrimary) !important;
+}
