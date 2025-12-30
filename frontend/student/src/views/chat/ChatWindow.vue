@@ -179,7 +179,8 @@
 import { ref, onMounted, nextTick, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { getChatMessages, sendMessage, recallMessage } from '@/api/chat'
+import { getChatMessages, sendMessage, recallMessage, getChatRelationship, markMessageRead } from '@/api/chat'
+import { uploadFile } from '@/api/common'
 import {
   ArrowLeft,
   User,
@@ -314,13 +315,92 @@ const handleRecall = async (messageId) => {
 }
 
 const handleImageUpload = () => {
-  // TODO: 实现图片上传
-  ElMessage.info('图片上传功能开发中')
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = 'image/*'
+  input.onchange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    
+    // 检查文件大小（最大10MB）
+    if (file.size > 10 * 1024 * 1024) {
+      ElMessage.error('图片大小不能超过10MB')
+      return
+    }
+    
+    try {
+      sending.value = true
+      const uploadResult = await uploadFile(file, 'image')
+      const imageUrl = uploadResult.url || uploadResult.data?.url || uploadResult
+      
+      // 获取图片尺寸
+      const img = new Image()
+      img.onload = async () => {
+        await sendMessage({
+          relationshipId: relationshipId.value,
+          receiverId: chatInfo.value.userId,
+          messageType: 4,
+          content: JSON.stringify({
+            image_url: imageUrl,
+            thumbnail_url: imageUrl,
+            width: img.width,
+            height: img.height
+          })
+        })
+        ElMessage.success('图片发送成功')
+        loadMessages()
+        sending.value = false
+      }
+      img.onerror = () => {
+        ElMessage.error('图片加载失败')
+        sending.value = false
+      }
+      img.src = imageUrl
+    } catch (error) {
+      ElMessage.error(error.message || '图片上传失败')
+      sending.value = false
+    }
+  }
+  input.click()
 }
 
 const handleFileUpload = () => {
-  // TODO: 实现文件上传
-  ElMessage.info('文件上传功能开发中')
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.onchange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    
+    // 检查文件大小（最大50MB）
+    if (file.size > 50 * 1024 * 1024) {
+      ElMessage.error('文件大小不能超过50MB')
+      return
+    }
+    
+    try {
+      sending.value = true
+      const uploadResult = await uploadFile(file, 'document')
+      const fileUrl = uploadResult.url || uploadResult.data?.url || uploadResult
+      
+      await sendMessage({
+        relationshipId: relationshipId.value,
+        receiverId: chatInfo.value.userId,
+        messageType: 2,
+        content: JSON.stringify({
+          file_url: fileUrl,
+          file_name: file.name,
+          file_size: file.size
+        })
+      })
+      ElMessage.success('文件发送成功')
+      loadMessages()
+    } catch (error) {
+      ElMessage.error(error.message || '文件上传失败')
+    } finally {
+      sending.value = false
+    }
+  }
+  input.click()
 }
 
 // 语音录制功能
@@ -392,16 +472,10 @@ const formatRecordTime = (seconds) => {
 
 const sendVoiceMessage = async (audioBlob) => {
   try {
-    // TODO: 实际上传语音文件到服务器
-    const formData = new FormData()
-    formData.append('file', audioBlob, 'voice.webm')
-    formData.append('duration', recordTime.value)
-    
-    // 这里应该调用上传API
-    // const uploadResult = await uploadVoiceFile(formData)
-    
-    // 模拟上传结果
-    const voiceUrl = URL.createObjectURL(audioBlob)
+    sending.value = true
+    // 实际上传语音文件到服务器
+    const uploadResult = await uploadFile(audioBlob, 'audio')
+    const voiceUrl = uploadResult.url || uploadResult.data?.url || uploadResult
     
     await sendMessage({
       relationshipId: relationshipId.value,
@@ -416,8 +490,10 @@ const sendVoiceMessage = async (audioBlob) => {
     ElMessage.success('语音消息发送成功')
     loadMessages()
   } catch (error) {
-    ElMessage.error('发送语音消息失败')
+    ElMessage.error(error.message || '发送语音消息失败')
     console.error(error)
+  } finally {
+    sending.value = false
   }
 }
 
@@ -472,20 +548,73 @@ const handleVoiceCall = async () => {
   }
 }
 
-onMounted(() => {
-  // TODO: 从聊天列表获取聊天信息，或通过 API 获取
-  chatInfo.value = {
-    name: '教师',
-    avatar: '',
-    userId: null,
-    onlineStatus: 0
+const loadChatInfo = async () => {
+  try {
+    const data = await getChatRelationship(relationshipId.value)
+    chatInfo.value = {
+      name: data.name || data.nickname || '用户',
+      avatar: data.avatar || '',
+      userId: data.userId || data.userId1 || data.userId2,
+      onlineStatus: data.onlineStatus || 0
+    }
+  } catch (error) {
+    console.error('加载聊天信息失败:', error)
+    // 使用默认值
+    chatInfo.value = {
+      name: '用户',
+      avatar: '',
+      userId: null,
+      onlineStatus: 0
+    }
   }
+}
+
+// WebSocket 连接
+let ws = null
+const connectWebSocket = () => {
+  // 如果后端支持WebSocket，在这里建立连接
+  // const wsUrl = `ws://localhost:8080/ws?token=${userStore.token}`
+  // ws = new WebSocket(wsUrl)
+  // 
+  // ws.onmessage = (event) => {
+  //   const message = JSON.parse(event.data)
+  //   if (message.type === 'receiveMsg' && message.data.relationshipId === relationshipId.value) {
+  //     // 收到新消息，添加到消息列表
+  //     messages.value.push(message.data)
+  //     scrollToBottom()
+  //     // 标记已读
+  //     markMessageRead(relationshipId.value)
+  //   }
+  // }
+  // 
+  // ws.onerror = (error) => {
+  //   console.error('WebSocket error:', error)
+  // }
+  // 
+  // ws.onclose = () => {
+  //   // 重连逻辑
+  //   setTimeout(connectWebSocket, 3000)
+  // }
+}
+
+const disconnectWebSocket = () => {
+  if (ws) {
+    ws.close()
+    ws = null
+  }
+}
+
+onMounted(async () => {
+  await loadChatInfo()
   loadMessages()
-  
-  // TODO: 建立 WebSocket 连接接收实时消息
+  // 标记消息已读
+  markMessageRead(relationshipId.value)
+  // 建立 WebSocket 连接（如果后端支持）
+  // connectWebSocket()
   
   // 清理录音资源
   return () => {
+    disconnectWebSocket()
     if (recordTimer.value) {
       clearInterval(recordTimer.value)
     }

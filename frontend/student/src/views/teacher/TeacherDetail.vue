@@ -218,8 +218,34 @@ const loadReviews = async () => {
 }
 
 const isAvailableDate = (date) => {
-  // TODO: 根据实际的时间表数据判断
-  return true
+  if (!teacherInfo.value || !teacherInfo.value.schedules) {
+    return false
+  }
+  
+  const dateObj = new Date(date)
+  const weekday = dateObj.getDay() === 0 ? 7 : dateObj.getDay() // 转换为1-7（周一到周日）
+  const dateStr = dateObj.toISOString().split('T')[0]
+  
+  // 检查是否有该日期的时间段
+  const hasSchedule = teacherInfo.value.schedules.some(schedule => {
+    // 固定周期时间段
+    if (schedule.scheduleType === 1 && schedule.weekday === weekday && schedule.status === 1) {
+      return true
+    }
+    // 临时时间段
+    if (schedule.scheduleType === 2 && schedule.status === 1) {
+      const startDate = schedule.startDate ? new Date(schedule.startDate).toISOString().split('T')[0] : null
+      const endDate = schedule.endDate ? new Date(schedule.endDate).toISOString().split('T')[0] : null
+      if (startDate && endDate && dateStr >= startDate && dateStr <= endDate) {
+        // 还需要检查星期几是否匹配
+        const scheduleWeekday = new Date(schedule.startDate).getDay() === 0 ? 7 : new Date(schedule.startDate).getDay()
+        return scheduleWeekday === weekday
+      }
+    }
+    return false
+  })
+  
+  return hasSchedule
 }
 
 const formatTime = (time) => {
