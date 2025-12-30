@@ -880,10 +880,25 @@ CREATE TABLE `file_uploads` (
 #### 3.1.4 退款流程
 1. **申请退款** → `refunds` 表创建记录（status=1 待审核）
    - 创建 `notifications` 通知管理员
+   - 记录 `operation_logs`
 2. **管理员审核** → `refunds.status=2`（已通过）或 `refunds.status=3`（已拒绝）
    - 更新 `refunds.audit_user_id`、`refunds.audit_reason`、`refunds.audit_at`
    - 创建 `notifications` 通知学生
+   - 记录 `operation_logs`
 3. **退款完成** → `refunds.status=4`（已完成），更新 `refunds.refund_time`、`refunds.refund_account`
+   - 创建 `notifications` 通知学生
+
+#### 3.1.5 评价流程
+1. **课程完成** → 预约状态变为已完成（status=3）
+2. **创建评价** → `reviews` 表创建记录
+   - 更新 `teacher_profiles.rating`、`teacher_profiles.rating_count`（重新计算平均分）
+   - 创建 `notifications` 通知教师
+   - 记录 `operation_logs`
+
+#### 3.1.6 通知管理
+1. **查看通知** → 查询 `notifications` 表，按用户ID筛选
+2. **标记已读** → 更新 `notifications.is_read=1`、`notifications.read_at`
+3. **删除通知** → 软删除 `notifications.deleted_at`
 
 #### 3.1.5 聊天流程
 1. **建立聊天关系** → 预约确认时自动创建 `chat_relationships` 记录

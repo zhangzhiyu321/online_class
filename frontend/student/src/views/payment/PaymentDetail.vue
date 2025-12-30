@@ -135,6 +135,16 @@
           </template>
         </el-alert>
       </div>
+
+      <!-- 已完成状态 - 可以申请退款 -->
+      <div v-if="paymentInfo.status === 3" class="actions-section">
+        <el-button
+          type="warning"
+          @click="goToRefund"
+        >
+          申请退款
+        </el-button>
+      </div>
     </el-card>
   </div>
 </template>
@@ -266,6 +276,10 @@ const handleSubmitProof = async () => {
   } finally {
     submitting.value = false
   }
+}
+
+const goToRefund = () => {
+  router.push(`/refund/create?paymentId=${paymentId.value}`)
 }
 
 onMounted(() => {

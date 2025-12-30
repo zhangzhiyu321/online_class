@@ -54,6 +54,64 @@
       </el-form>
     </el-card>
 
+    <el-card class="form-card">
+      <template #header>
+        <span>学生信息</span>
+      </template>
+      <el-form
+        ref="studentFormRef"
+        :model="studentForm"
+        :rules="studentRules"
+        label-width="120px"
+      >
+        <el-form-item label="真实姓名" prop="realName">
+          <el-input v-model="studentForm.realName" placeholder="请输入真实姓名" />
+        </el-form-item>
+        <el-form-item label="年级" prop="grade">
+          <el-input v-model="studentForm.grade" placeholder="请输入年级，如：初一、高一" />
+        </el-form-item>
+        <el-form-item label="学校名称" prop="schoolName">
+          <el-input v-model="studentForm.schoolName" placeholder="请输入学校名称" />
+        </el-form-item>
+        <el-form-item label="学习目标" prop="learningGoals">
+          <el-input
+            v-model="studentForm.learningGoals"
+            type="textarea"
+            :rows="4"
+            placeholder="请输入学习目标"
+            maxlength="500"
+            show-word-limit
+          />
+        </el-form-item>
+        <el-form-item label="薄弱科目">
+          <el-select
+            v-model="studentForm.weakSubjects"
+            multiple
+            placeholder="请选择薄弱科目"
+            style="width: 100%"
+          >
+            <el-option
+              v-for="subject in subjects"
+              :key="subject.id"
+              :label="subject.name"
+              :value="subject.id"
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="家长姓名" prop="parentName">
+          <el-input v-model="studentForm.parentName" placeholder="请输入家长姓名" />
+        </el-form-item>
+        <el-form-item label="家长电话" prop="parentPhone">
+          <el-input v-model="studentForm.parentPhone" placeholder="请输入家长电话" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleSubmitStudent" :loading="submittingStudent">
+            保存学生信息
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+
     <el-card class="actions-card">
       <template #header>
         <span>其他操作</span>
@@ -69,7 +127,8 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import { updateUserInfo, uploadAvatar } from '@/api/user'
+import { updateUserInfo, uploadAvatar, getUserInfo } from '@/api/user'
+import { getSubjects } from '@/api/common'
 import { User, Camera } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -82,8 +141,21 @@ const form = ref({
   email: ''
 })
 
+const studentForm = ref({
+  realName: '',
+  grade: '',
+  schoolName: '',
+  learningGoals: '',
+  weakSubjects: [],
+  parentName: '',
+  parentPhone: ''
+})
+
+const subjects = ref([])
 const formRef = ref()
+const studentFormRef = ref()
 const submitting = ref(false)
+const submittingStudent = ref(false)
 
 const userInfo = computed(() => userStore.userInfo || {})
 
@@ -105,6 +177,16 @@ const rules = {
   ]
 }
 
+const studentRules = {
+  parentPhone: [
+    {
+      pattern: /^1[3-9]\d{9}$/,
+      message: '请输入正确的手机号',
+      trigger: 'blur'
+    }
+  ]
+}
+
 const uploadUrl = computed(() => {
   return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/user/avatar`
 })
@@ -115,23 +197,39 @@ const uploadHeaders = computed(() => {
   }
 })
 
-const loadUserInfo = () => {
-  if (userInfo.value) {
-    form.value = {
-      nickname: userInfo.value.nickname || '',
-      phone: userInfo.value.phone || '',
-      email: userInfo.value.email || ''
-    }
-  } else {
-    userStore.loadUserInfo().then((info) => {
-      if (info) {
-        form.value = {
-          nickname: info.nickname || '',
-          phone: info.phone || '',
-          email: info.email || ''
+const loadUserInfo = async () => {
+  try {
+    const info = await getUserInfo()
+    if (info) {
+      form.value = {
+        nickname: info.nickname || '',
+        phone: info.phone || '',
+        email: info.email || ''
+      }
+      // 加载学生扩展信息
+      if (info.studentProfile) {
+        studentForm.value = {
+          realName: info.studentProfile.realName || '',
+          grade: info.studentProfile.grade || '',
+          schoolName: info.studentProfile.schoolName || '',
+          learningGoals: info.studentProfile.learningGoals || '',
+          weakSubjects: info.studentProfile.weakSubjects || [],
+          parentName: info.studentProfile.parentName || '',
+          parentPhone: info.studentProfile.parentPhone || ''
         }
       }
-    })
+    }
+  } catch (error) {
+    console.error('加载用户信息失败:', error)
+  }
+}
+
+const loadSubjects = async () => {
+  try {
+    const data = await getSubjects()
+    subjects.value = Array.isArray(data) ? data : (data.list || [])
+  } catch (error) {
+    console.error('加载科目列表失败:', error)
   }
 }
 
@@ -164,6 +262,26 @@ const handleSubmit = async () => {
   }
 }
 
+const handleSubmitStudent = async () => {
+  if (!studentFormRef.value) return
+  await studentFormRef.value.validate((valid) => {
+    if (!valid) return
+  })
+
+  submittingStudent.value = true
+  try {
+    await updateUserInfo({
+      studentProfile: studentForm.value
+    })
+    userStore.loadUserInfo()
+    ElMessage.success('保存成功')
+  } catch (error) {
+    ElMessage.error(error.message || '保存失败')
+  } finally {
+    submittingStudent.value = false
+  }
+}
+
 const handleLogout = () => {
   ElMessageBox.confirm('确定要退出登录吗？', '提示', {
     confirmButtonText: '确定',
@@ -177,6 +295,7 @@ const handleLogout = () => {
 
 onMounted(() => {
   loadUserInfo()
+  loadSubjects()
 })
 </script>
 

@@ -73,6 +73,31 @@ const router = createRouter({
           component: () => import('@/views/payment/PaymentDetail.vue')
         },
         {
+          path: 'refunds',
+          name: 'Refunds',
+          component: () => import('@/views/refund/RefundList.vue')
+        },
+        {
+          path: 'refund/:id',
+          name: 'RefundDetail',
+          component: () => import('@/views/refund/RefundDetail.vue')
+        },
+        {
+          path: 'refund/create',
+          name: 'CreateRefund',
+          component: () => import('@/views/refund/CreateRefund.vue')
+        },
+        {
+          path: 'review/create',
+          name: 'CreateReview',
+          component: () => import('@/views/review/CreateReview.vue')
+        },
+        {
+          path: 'notifications',
+          name: 'Notifications',
+          component: () => import('@/views/notification/NotificationList.vue')
+        },
+        {
           path: 'chats',
           name: 'Chats',
           component: () => import('@/views/chat/ChatList.vue')

@@ -37,6 +37,15 @@
                 class="badge"
               />
             </el-menu-item>
+            <el-menu-item index="notifications">
+              <el-icon><Bell /></el-icon>
+              <span>通知</span>
+              <el-badge
+                v-if="notificationUnreadCount > 0"
+                :value="notificationUnreadCount"
+                class="badge"
+              />
+            </el-menu-item>
           </el-menu>
           <el-dropdown 
             @command="handleCommand"
@@ -113,7 +122,8 @@ import {
   ChatDotRound,
   ArrowDown,
   SwitchButton,
-  HomeFilled
+  HomeFilled,
+  Bell
 } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 
@@ -122,6 +132,7 @@ const route = useRoute()
 const userStore = useUserStore()
 
 const unreadCount = ref(0)
+const notificationUnreadCount = ref(0)
 
 // 加载未读消息数
 const loadUnreadCount = async () => {
@@ -135,12 +146,26 @@ const loadUnreadCount = async () => {
   }
 }
 
+// 加载未读通知数
+const loadNotificationUnreadCount = async () => {
+  try {
+    const { getUnreadCount } = await import('@/api/notification')
+    const data = await getUnreadCount()
+    notificationUnreadCount.value = data.count || 0
+  } catch (error) {
+    console.error('加载未读通知数失败:', error)
+    notificationUnreadCount.value = 0
+  }
+}
+
 // 路由映射表
 const routeMap = {
   '/home': 'home',
   '/teachers': 'teachers',
   '/appointment': 'appointments',
   '/payment': 'payments',
+  '/refund': 'refunds',
+  '/notification': 'notifications',
   '/chat': 'chats'
 }
 
@@ -164,6 +189,8 @@ const mobileNavItems = [
 
 // 菜单索引到路由的映射
 const menuRouteMap = {
+  'notifications': '/notifications',
+  'refunds': '/refunds',
   home: '/home',
   teachers: '/teachers',
   appointments: '/appointments',
@@ -266,12 +293,14 @@ onMounted(() => {
   if (!userStore.userInfo) {
     userStore.loadUserInfo()
   }
-  // 加载未读消息数
+  // 加载未读消息数和通知数
   loadUnreadCount()
-  // 定期刷新未读消息数（每30秒）
+  loadNotificationUnreadCount()
+  // 定期刷新未读消息数和通知数（每30秒）
   const unreadTimer = setInterval(() => {
     if (userStore.isAuthenticated()) {
       loadUnreadCount()
+      loadNotificationUnreadCount()
     }
   }, 30000)
   

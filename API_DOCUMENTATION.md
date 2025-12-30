@@ -404,7 +404,16 @@ Authorization: Bearer {token}
 {
   "nickname": "string",  // 昵称（选填）
   "phone": "string",    // 手机号（选填）
-  "email": "string"     // 邮箱（选填）
+  "email": "string",    // 邮箱（选填）
+  "studentProfile": {   // 学生扩展信息（选填，仅学生角色）
+    "realName": "string",      // 真实姓名
+    "grade": "string",         // 年级
+    "schoolName": "string",    // 学校名称
+    "learningGoals": "string", // 学习目标
+    "weakSubjects": [1, 2],     // 薄弱科目ID数组
+    "parentName": "string",    // 家长姓名
+    "parentPhone": "string"    // 家长电话
+  }
 }
 ```
 
@@ -914,7 +923,362 @@ Authorization: Bearer {token}
 
 ---
 
-## 七、聊天相关接口
+## 七、退款相关接口
+
+### 7.1 申请退款
+
+**接口地址**: `POST /api/refund`
+
+**请求头**: 需要Token认证
+
+**请求参数**:
+```json
+{
+  "paymentId": 1,              // 支付记录ID（必填）
+  "refundReason": "string"     // 退款原因（必填，至少10个字符）
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "退款申请已提交",
+  "data": {
+    "id": 1,
+    "refundNo": "REF20240120001",
+    "refundAmount": 200.00,
+    "status": 1
+  }
+}
+```
+
+**错误响应**:
+```json
+{
+  "code": 400,
+  "message": "该支付记录不支持退款",
+  "data": null
+}
+```
+
+**说明**:
+- 只有已完成支付的订单才能申请退款
+- 退款申请需要管理员审核
+- 退款原因至少10个字符
+
+---
+
+### 7.2 获取退款列表
+
+**接口地址**: `GET /api/refund/list`
+
+**请求头**: 需要Token认证
+
+**请求参数** (Query参数):
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| page | Integer | 否 | 页码 |
+| pageSize | Integer | 否 | 每页数量 |
+| status | Integer | 否 | 退款状态：1-待审核，2-已通过，3-已拒绝，4-已完成 |
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "list": [
+      {
+        "id": 1,
+        "refundNo": "REF20240120001",
+        "paymentId": 1,
+        "appointmentId": 1,
+        "teacherId": 1,
+        "teacherName": "张老师",
+        "refundAmount": 200.00,
+        "refundReason": "课程未按时进行",
+        "status": 1,
+        "createdAt": "2024-01-20T10:00:00"
+      }
+    ],
+    "total": 3,
+    "page": 1,
+    "pageSize": 10
+  }
+}
+```
+
+---
+
+### 7.3 获取退款详情
+
+**接口地址**: `GET /api/refund/{id}`
+
+**请求头**: 需要Token认证
+
+**路径参数**:
+- `id`: 退款记录ID
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "refundNo": "REF20240120001",
+    "paymentId": 1,
+    "appointmentId": 1,
+    "teacherId": 1,
+    "teacherName": "张老师",
+    "refundAmount": 200.00,
+    "refundReason": "课程未按时进行",
+    "status": 2,
+    "auditReason": "审核通过",
+    "auditAt": "2024-01-21T10:00:00",
+    "refundTime": "2024-01-22T10:00:00",
+    "refundAccount": "6222****1234",
+    "createdAt": "2024-01-20T10:00:00"
+  }
+}
+```
+
+---
+
+## 八、评价相关接口
+
+### 8.1 创建评价
+
+**接口地址**: `POST /api/review`
+
+**请求头**: 需要Token认证
+
+**请求参数**:
+```json
+{
+  "appointmentId": 1,          // 预约ID（必填）
+  "rating": 5,                 // 评分：1-5分（必填）
+  "content": "string",          // 评价内容（选填，最多500字符）
+  "images": ["url1", "url2"]    // 评价图片URL数组（选填，最多3张）
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "评价提交成功",
+  "data": {
+    "id": 1,
+    "appointmentId": 1,
+    "teacherId": 1,
+    "rating": 5,
+    "content": "老师很专业，讲解清晰",
+    "images": [],
+    "createdAt": "2024-01-20T10:00:00"
+  }
+}
+```
+
+**错误响应**:
+```json
+{
+  "code": 400,
+  "message": "该预约已完成评价或未完成课程",
+  "data": null
+}
+```
+
+**说明**:
+- 只有已完成的预约才能评价
+- 每个预约只能评价一次
+- 评分必填，评价内容选填
+- 评价图片最多3张
+
+---
+
+### 8.2 获取评价详情
+
+**接口地址**: `GET /api/review/{id}`
+
+**请求头**: 需要Token认证
+
+**路径参数**:
+- `id`: 评价ID
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "appointmentId": 1,
+    "studentId": 1,
+    "studentName": "学生",
+    "teacherId": 1,
+    "teacherName": "张老师",
+    "rating": 5,
+    "content": "老师很专业，讲解清晰",
+    "images": ["url1", "url2"],
+    "createdAt": "2024-01-20T10:00:00"
+  }
+}
+```
+
+---
+
+## 九、通知相关接口
+
+### 9.1 获取通知列表
+
+**接口地址**: `GET /api/notification/list`
+
+**请求头**: 需要Token认证
+
+**请求参数** (Query参数):
+| 参数名 | 类型 | 必填 | 说明 |
+|--------|------|------|------|
+| page | Integer | 否 | 页码 |
+| pageSize | Integer | 否 | 每页数量 |
+| type | Integer | 否 | 通知类型：1-系统通知，2-预约通知，3-支付通知，4-评价通知，5-聊天通知 |
+| isRead | Integer | 否 | 是否已读：0-未读，1-已读 |
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "list": [
+      {
+        "id": 1,
+        "type": 2,
+        "title": "预约已确认",
+        "content": "您的预约已被教师确认",
+        "relatedId": 1,
+        "relatedType": "appointment",
+        "isRead": 0,
+        "createdAt": "2024-01-20T10:00:00"
+      }
+    ],
+    "total": 10,
+    "page": 1,
+    "pageSize": 20
+  }
+}
+```
+
+---
+
+### 9.2 获取通知详情
+
+**接口地址**: `GET /api/notification/{id}`
+
+**请求头**: 需要Token认证
+
+**路径参数**:
+- `id`: 通知ID
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "id": 1,
+    "type": 2,
+    "title": "预约已确认",
+    "content": "您的预约已被教师确认，请按时参加课程",
+    "relatedId": 1,
+    "relatedType": "appointment",
+    "isRead": 0,
+    "readAt": null,
+    "createdAt": "2024-01-20T10:00:00"
+  }
+}
+```
+
+---
+
+### 9.3 标记通知为已读
+
+**接口地址**: `PUT /api/notification/{id}/read`
+
+**请求头**: 需要Token认证
+
+**路径参数**:
+- `id`: 通知ID
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "标记成功",
+  "data": null
+}
+```
+
+---
+
+### 9.4 标记所有通知为已读
+
+**接口地址**: `PUT /api/notification/read-all`
+
+**请求头**: 需要Token认证
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "标记成功",
+  "data": null
+}
+```
+
+---
+
+### 9.5 获取未读通知数量
+
+**接口地址**: `GET /api/notification/unread-count`
+
+**请求头**: 需要Token认证
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "success",
+  "data": {
+    "count": 5
+  }
+}
+```
+
+---
+
+### 9.6 删除通知
+
+**接口地址**: `DELETE /api/notification/{id}`
+
+**请求头**: 需要Token认证
+
+**路径参数**:
+- `id`: 通知ID
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "删除成功",
+  "data": null
+}
+```
+
+---
+
+## 十、聊天相关接口
 
 ### 7.1 获取聊天列表
 
@@ -1170,7 +1534,7 @@ Authorization: Bearer {token}
 
 ---
 
-## 八、公告相关接口
+## 十一、公告相关接口
 
 ### 8.1 获取已发布公告列表
 
@@ -1230,7 +1594,7 @@ Authorization: Bearer {token}
 
 ---
 
-## 九、通用接口
+## 十二、通用接口
 
 ### 9.1 获取教学阶段列表
 
@@ -1334,7 +1698,7 @@ Authorization: Bearer {token}
 
 ---
 
-## 十、接口开发优先级建议
+## 十三、接口开发优先级建议
 
 ### 第一阶段（基础功能 - 必须实现）
 1. ✅ 认证接口（登录、注册）

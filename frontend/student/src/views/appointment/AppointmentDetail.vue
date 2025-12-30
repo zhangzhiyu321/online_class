@@ -62,11 +62,18 @@
           联系教师
         </el-button>
         <el-button
-          v-if="appointmentInfo.status === 3"
+          v-if="appointmentInfo.status === 3 && !appointmentInfo.hasReview"
           type="primary"
           @click="goToPayment"
         >
           去支付
+        </el-button>
+        <el-button
+          v-if="appointmentInfo.status === 3 && appointmentInfo.hasPayment && !appointmentInfo.hasReview"
+          type="success"
+          @click="goToReview"
+        >
+          去评价
         </el-button>
       </div>
     </el-card>
@@ -150,6 +157,10 @@ const goToChat = () => {
 
 const goToPayment = () => {
   router.push(`/payments?appointmentId=${appointmentId.value}`)
+}
+
+const goToReview = () => {
+  router.push(`/review/create?appointmentId=${appointmentId.value}`)
 }
 
 onMounted(() => {
