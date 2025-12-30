@@ -15,3 +15,18 @@ export const uploadPaymentProof = (id, data) => {
   return request.post(`/payment/${id}/proof`, data)
 }
 
+// 申请退款
+export const createRefund = (data) => {
+  return request.post('/refund', data)
+}
+
+// 获取退款列表
+export const getRefundList = (params) => {
+  return request.get('/refund/list', { params })
+}
+
+// 获取退款详情
+export const getRefundDetail = (id) => {
+  return request.get(`/refund/${id}`)
+}
+

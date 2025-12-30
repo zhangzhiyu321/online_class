@@ -611,6 +611,202 @@ INSERT INTO `system_configs` (`config_key`, `config_value`, `config_type`, `desc
 ('max_appointment_hours', '4', 'number', '最大预约时长（小时）', 'appointment', 2),
 ('appointment_advance_days', '7', 'number', '可预约提前天数', 'appointment', 3);
 
+-- ============================================
+-- 测试数据插入
+-- ============================================
+
+-- 1. 用户表测试数据
+-- 密码都是: 123456 (BCrypt加密后的值，实际使用时需要根据实际情况生成)
+INSERT INTO `users` (`username`, `password`, `nickname`, `avatar`, `phone`, `email`, `role`, `status`, `online_status`, `last_login_at`, `last_login_ip`) VALUES
+-- 管理员
+('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iw8qJ5pO', '系统管理员', 'https://example.com/avatars/admin.jpg', '13800000001', 'admin@example.com', 3, 1, 0, '2024-01-20 10:00:00', '192.168.1.100'),
+-- 教师用户
+('teacher001', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iw8qJ5pO', '张老师', 'https://example.com/avatars/teacher001.jpg', '13800001001', 'teacher001@example.com', 2, 1, 1, '2024-01-20 09:30:00', '192.168.1.101'),
+('teacher002', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iw8qJ5pO', '李老师', 'https://example.com/avatars/teacher002.jpg', '13800001002', 'teacher002@example.com', 2, 1, 0, '2024-01-19 15:20:00', '192.168.1.102'),
+('teacher003', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iw8qJ5pO', '王老师', 'https://example.com/avatars/teacher003.jpg', '13800001003', 'teacher003@example.com', 2, 1, 1, '2024-01-20 08:00:00', '192.168.1.103'),
+('teacher004', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iw8qJ5pO', '刘老师', 'https://example.com/avatars/teacher004.jpg', '13800001004', 'teacher004@example.com', 2, 1, 0, '2024-01-18 20:10:00', '192.168.1.104'),
+('teacher005', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iw8qJ5pO', '陈老师', 'https://example.com/avatars/teacher005.jpg', '13800001005', 'teacher005@example.com', 2, 1, 1, '2024-01-20 11:00:00', '192.168.1.105'),
+-- 学生用户
+('student001', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iw8qJ5pO', '小明', 'https://example.com/avatars/student001.jpg', '13800002001', 'student001@example.com', 1, 1, 1, '2024-01-20 10:15:00', '192.168.1.201'),
+('student002', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iw8qJ5pO', '小红', 'https://example.com/avatars/student002.jpg', '13800002002', 'student002@example.com', 1, 1, 0, '2024-01-19 14:30:00', '192.168.1.202'),
+('student003', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iw8qJ5pO', '小刚', 'https://example.com/avatars/student003.jpg', '13800002003', 'student003@example.com', 1, 1, 1, '2024-01-20 09:45:00', '192.168.1.203'),
+('student004', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iw8qJ5pO', '小丽', 'https://example.com/avatars/student004.jpg', '13800002004', 'student004@example.com', 1, 1, 0, '2024-01-18 16:20:00', '192.168.1.204'),
+('student005', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iw8qJ5pO', '小强', 'https://example.com/avatars/student005.jpg', '13800002005', 'student005@example.com', 1, 1, 1, '2024-01-20 08:30:00', '192.168.1.205'),
+('student006', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iw8qJ5pO', '小美', 'https://example.com/avatars/student006.jpg', '13800002006', 'student006@example.com', 1, 1, 0, '2024-01-17 19:00:00', '192.168.1.206');
+
+-- 2. 教师扩展信息表
+INSERT INTO `teacher_profiles` (`user_id`, `real_name`, `introduction`, `teaching_years`, `teaching_style`, `rating`, `rating_count`, `bank_account`, `bank_name`, `account_holder`) VALUES
+(2, '张明', '毕业于北京师范大学数学系，拥有10年教学经验，擅长初中数学教学，注重培养学生的逻辑思维能力。', 10, '耐心细致，善于启发式教学，注重培养学生的独立思考能力', 4.8, 25, '6222021234567890123', '中国工商银行', '张明'),
+(3, '李华', '清华大学物理系毕业，从事高中物理教学8年，曾获得优秀教师称号。', 8, '严谨认真，注重理论与实践相结合，善于用生活实例解释物理现象', 4.6, 18, '6222089876543210987', '中国建设银行', '李华'),
+(4, '王芳', '北京外国语大学英语专业，英语专业八级，有丰富的英语教学经验。', 6, '活泼生动，注重口语训练，善于激发学生学习兴趣', 4.9, 32, '6222123456789012345', '中国银行', '王芳'),
+(5, '刘强', '华东师范大学化学系毕业，从事化学教学12年，对高考化学有深入研究。', 12, '系统全面，注重知识体系构建，善于总结归纳', 4.7, 28, '6222165432109876543', '中国农业银行', '刘强'),
+(6, '陈静', '复旦大学中文系毕业，语文教学经验丰富，擅长作文指导。', 9, '温文尔雅，注重文学素养培养，善于引导学生感受文字之美', 4.5, 15, '6222209876543210123', '招商银行', '陈静');
+
+-- 3. 学生扩展信息表
+INSERT INTO `student_profiles` (`user_id`, `real_name`, `grade`, `school_name`, `learning_goals`, `weak_subjects`, `parent_name`, `parent_phone`) VALUES
+(7, '张小明', '初一', '第一中学', '提高数学成绩，培养逻辑思维能力', '[1, 2]', '张父', '13800003001'),
+(8, '李小红', '初二', '第二中学', '加强英语口语练习，提高英语综合能力', '[3]', '李母', '13800003002'),
+(9, '王小刚', '高一', '实验中学', '提高物理成绩，为高考做准备', '[4]', '王父', '13800003003'),
+(10, '刘小丽', '高二', '重点中学', '提高化学成绩，加强实验能力', '[5]', '刘母', '13800003004'),
+(11, '陈小强', '初三', '第三中学', '全面提高各科成绩，冲刺中考', '[1, 3]', '陈父', '13800003005'),
+(12, '赵小美', '高三', '示范中学', '提高语文作文水平，加强文学素养', '[2]', '赵母', '13800003006');
+
+-- 4. 用户第三方登录关联表（部分用户绑定微信/QQ）
+INSERT INTO `user_oauth` (`user_id`, `oauth_type`, `openid`, `unionid`, `nickname`, `avatar`) VALUES
+(7, 1, 'wx_openid_student001', 'wx_unionid_001', '小明', 'https://example.com/wechat/student001.jpg'),
+(8, 2, 'qq_openid_student002', NULL, '小红', 'https://example.com/qq/student002.jpg'),
+(2, 1, 'wx_openid_teacher001', 'wx_unionid_002', '张老师', 'https://example.com/wechat/teacher001.jpg'),
+(3, 2, 'qq_openid_teacher002', NULL, '李老师', 'https://example.com/qq/teacher002.jpg');
+
+-- 5. 教师学历认证表
+INSERT INTO `teacher_certifications` (`user_id`, `certificate_type`, `certificate_image`, `school_name`, `major`, `degree`, `graduation_year`, `status`, `audit_user_id`, `audit_reason`, `audit_at`) VALUES
+(2, 1, 'https://example.com/certificates/teacher001_degree.jpg', '北京师范大学', '数学与应用数学', '本科', 2010, 2, 1, '审核通过', '2024-01-01 10:00:00'),
+(2, 2, 'https://example.com/certificates/teacher001_teaching.jpg', NULL, NULL, '高级中学教师资格证', 2011, 2, 1, '审核通过', '2024-01-01 10:05:00'),
+(3, 1, 'https://example.com/certificates/teacher002_degree.jpg', '清华大学', '物理学', '硕士', 2012, 2, 1, '审核通过', '2024-01-02 11:00:00'),
+(4, 1, 'https://example.com/certificates/teacher003_degree.jpg', '北京外国语大学', '英语', '本科', 2014, 2, 1, '审核通过', '2024-01-03 09:00:00'),
+(5, 1, 'https://example.com/certificates/teacher004_degree.jpg', '华东师范大学', '化学', '硕士', 2008, 2, 1, '审核通过', '2024-01-04 14:00:00'),
+(6, 1, 'https://example.com/certificates/teacher005_degree.jpg', '复旦大学', '汉语言文学', '本科', 2011, 1, NULL, NULL, NULL);
+
+-- 6. 教师教学信息表
+INSERT INTO `teacher_teachings` (`user_id`, `stage_id`, `subject_id`, `price_per_hour`, `status`) VALUES
+-- 张老师：初中数学
+(2, 2, 1, 150.00, 1),
+-- 李老师：高中物理
+(3, 3, 4, 200.00, 1),
+-- 王老师：初中英语、高中英语
+(4, 2, 3, 180.00, 1),
+(4, 3, 3, 200.00, 1),
+-- 刘老师：高中化学
+(5, 3, 5, 190.00, 1),
+-- 陈老师：初中语文、高中语文
+(6, 2, 2, 160.00, 1),
+(6, 3, 2, 180.00, 1);
+
+-- 7. 教师空闲时间表
+INSERT INTO `teacher_schedules` (`user_id`, `weekday`, `start_time`, `end_time`, `schedule_type`, `status`) VALUES
+-- 张老师：周一、周三、周五 晚上
+(2, 1, '19:00:00', '21:00:00', 1, 1),
+(2, 3, '19:00:00', '21:00:00', 1, 1),
+(2, 5, '19:00:00', '21:00:00', 1, 1),
+-- 李老师：周二、周四、周六 晚上
+(3, 2, '19:30:00', '21:30:00', 1, 1),
+(3, 4, '19:30:00', '21:30:00', 1, 1),
+(3, 6, '14:00:00', '18:00:00', 1, 1),
+-- 王老师：周一至周五 晚上，周末全天
+(4, 1, '18:00:00', '20:00:00', 1, 1),
+(4, 2, '18:00:00', '20:00:00', 1, 1),
+(4, 3, '18:00:00', '20:00:00', 1, 1),
+(4, 4, '18:00:00', '20:00:00', 1, 1),
+(4, 5, '18:00:00', '20:00:00', 1, 1),
+(4, 6, '09:00:00', '18:00:00', 1, 1),
+(4, 7, '09:00:00', '18:00:00', 1, 1),
+-- 刘老师：周二、周四、周日 晚上
+(5, 2, '20:00:00', '22:00:00', 1, 1),
+(5, 4, '20:00:00', '22:00:00', 1, 1),
+(5, 7, '19:00:00', '21:00:00', 1, 1),
+-- 陈老师：周三、周五、周六 下午
+(6, 3, '14:00:00', '17:00:00', 1, 1),
+(6, 5, '14:00:00', '17:00:00', 1, 1),
+(6, 6, '09:00:00', '12:00:00', 1, 1);
+
+-- 8. 预约表
+INSERT INTO `appointments` (`order_no`, `student_id`, `teacher_id`, `stage_id`, `subject_id`, `appointment_date`, `start_time`, `end_time`, `duration`, `price_per_hour`, `total_amount`, `student_name`, `student_grade`, `student_phone`, `remark`, `status`, `dingtalk_url`, `confirmed_at`, `completed_at`) VALUES
+('ORD20240120001', 7, 2, 2, 1, '2024-01-25', '19:00:00', '21:00:00', 120, 150.00, 300.00, '张小明', '初一', '13800002001', '希望重点讲解一元一次方程', 2, 'https://meeting.dingtalk.com/j/xxx001', '2024-01-20 11:00:00', NULL),
+('ORD20240120002', 8, 4, 2, 3, '2024-01-26', '18:00:00', '20:00:00', 120, 180.00, 360.00, '李小红', '初二', '13800002002', '需要加强英语口语练习', 2, 'https://meeting.dingtalk.com/j/xxx002', '2024-01-20 12:00:00', NULL),
+('ORD20240120003', 9, 3, 3, 4, '2024-01-23', '19:30:00', '21:30:00', 120, 200.00, 400.00, '王小刚', '高一', '13800002003', '讲解力学部分', 3, 'https://meeting.dingtalk.com/j/xxx003', '2024-01-19 10:00:00', '2024-01-23 21:30:00'),
+('ORD20240120004', 10, 5, 3, 5, '2024-01-24', '20:00:00', '22:00:00', 120, 190.00, 380.00, '刘小丽', '高二', '13800002004', '有机化学复习', 3, 'https://meeting.dingtalk.com/j/xxx004', '2024-01-18 15:00:00', '2024-01-24 22:00:00'),
+('ORD20240120005', 11, 2, 2, 1, '2024-01-22', '19:00:00', '21:00:00', 120, 150.00, 300.00, '陈小强', '初三', '13800002005', '中考数学冲刺', 1, NULL, NULL, NULL),
+('ORD20240120006', 12, 6, 3, 2, '2024-01-27', '14:00:00', '17:00:00', 180, 180.00, 540.00, '赵小美', '高三', '13800002006', '高考作文指导', 2, 'https://meeting.dingtalk.com/j/xxx006', '2024-01-20 13:00:00', NULL),
+('ORD20240115001', 7, 2, 2, 1, '2024-01-15', '19:00:00', '21:00:00', 120, 150.00, 300.00, '张小明', '初一', '13800002001', '代数基础', 3, 'https://meeting.dingtalk.com/j/xxx007', '2024-01-10 10:00:00', '2024-01-15 21:00:00'),
+('ORD20240115002', 8, 4, 2, 3, '2024-01-16', '18:00:00', '20:00:00', 120, 180.00, 360.00, '李小红', '初二', '13800002002', '英语语法', 3, 'https://meeting.dingtalk.com/j/xxx008', '2024-01-11 11:00:00', '2024-01-16 20:00:00');
+
+-- 9. 支付记录表
+INSERT INTO `payments` (`payment_no`, `appointment_id`, `student_id`, `teacher_id`, `amount`, `payment_method`, `transfer_image`, `transfer_time`, `transfer_account`, `status`, `confirmed_at`, `confirmed_by`) VALUES
+('PAY20240115001', 7, 7, 2, 300.00, 1, 'https://example.com/proof/pay001.jpg', '2024-01-16 10:00:00', '6222021234567890123', 3, '2024-01-16 15:00:00', 2),
+('PAY20240115002', 8, 8, 4, 360.00, 1, 'https://example.com/proof/pay002.jpg', '2024-01-17 09:30:00', '6222123456789012345', 3, '2024-01-17 14:00:00', 4),
+('PAY20240123001', 3, 9, 3, 400.00, 1, 'https://example.com/proof/pay003.jpg', '2024-01-24 08:00:00', '6222089876543210987', 2, NULL, NULL),
+('PAY20240124001', 4, 10, 5, 380.00, 1, 'https://example.com/proof/pay004.jpg', '2024-01-25 10:00:00', '6222165432109876543', 3, '2024-01-25 16:00:00', 5);
+
+-- 10. 退款记录表
+INSERT INTO `refunds` (`refund_no`, `payment_id`, `appointment_id`, `student_id`, `teacher_id`, `refund_amount`, `refund_reason`, `status`, `audit_user_id`, `audit_reason`, `audit_at`, `refund_time`, `refund_account`) VALUES
+('REF20240120001', 1, 7, 7, 2, 300.00, '课程时间冲突，无法参加', 2, 1, '审核通过，同意退款', '2024-01-20 10:00:00', '2024-01-21 10:00:00', '6222021234567890123'),
+('REF20240120002', 2, 8, 8, 4, 360.00, '教师临时有事，课程取消', 1, NULL, NULL, NULL, NULL, NULL);
+
+-- 11. 评价表
+INSERT INTO `reviews` (`appointment_id`, `student_id`, `teacher_id`, `rating`, `content`, `images`, `status`) VALUES
+(7, 7, 2, 5, '张老师讲解非常清晰，很有耐心，孩子很喜欢。数学成绩有明显提升！', '[]', 1),
+(8, 8, 4, 5, '王老师英语发音标准，教学方法很好，孩子对英语学习更有兴趣了。', '[]', 1),
+(3, 9, 3, 4, '李老师物理知识扎实，讲解详细，但希望可以多一些互动。', '[]', 1),
+(4, 10, 5, 5, '刘老师化学教学经验丰富，实验讲解很生动，受益匪浅！', '["https://example.com/review/review001.jpg"]', 1);
+
+-- 12. 聊天关系表
+INSERT INTO `chat_relationships` (`user1_id`, `user2_id`, `appointment_id`, `user1_unread_count`, `user2_unread_count`, `user1_top`, `user2_top`, `last_message_time`) VALUES
+(7, 2, 1, 0, 2, 0, 1, '2024-01-20 14:30:00'),
+(8, 4, 2, 0, 0, 0, 0, '2024-01-19 16:20:00'),
+(9, 3, 3, 1, 0, 0, 0, '2024-01-20 10:15:00'),
+(10, 5, 4, 0, 0, 0, 0, '2024-01-18 20:00:00'),
+(11, 2, 5, 0, 1, 0, 0, '2024-01-20 13:45:00'),
+(12, 6, 6, 0, 0, 0, 0, '2024-01-20 15:00:00');
+
+-- 13. 聊天消息表
+INSERT INTO `chat_messages` (`relationship_id`, `sender_id`, `receiver_id`, `message_type`, `content`, `is_read`, `read_at`, `created_at`) VALUES
+(1, 2, 7, 1, '你好，我是张老师，很高兴为你上课！', 1, '2024-01-20 14:00:00', '2024-01-20 14:00:00'),
+(1, 7, 2, 1, '张老师好，我有些数学问题想请教', 1, '2024-01-20 14:05:00', '2024-01-20 14:05:00'),
+(1, 2, 7, 1, '没问题，我们可以先看看你的作业', 0, NULL, '2024-01-20 14:10:00'),
+(1, 2, 7, 1, '这是本周的学习计划，请查收', 0, NULL, '2024-01-20 14:30:00'),
+(2, 4, 8, 1, '小红你好，明天的课程准备好了吗？', 1, '2024-01-19 16:00:00', '2024-01-19 16:00:00'),
+(2, 8, 4, 1, '准备好了，王老师', 1, '2024-01-19 16:20:00', '2024-01-19 16:20:00'),
+(3, 3, 9, 1, '小刚，物理作业完成得怎么样？', 0, NULL, '2024-01-20 10:15:00'),
+(5, 2, 11, 1, '小强，关于中考数学有什么问题吗？', 0, NULL, '2024-01-20 13:45:00');
+
+-- 14. 通话记录表
+INSERT INTO `call_records` (`call_no`, `caller_id`, `receiver_id`, `call_type`, `status`, `start_time`, `end_time`, `duration`) VALUES
+('CALL20240120001', 7, 2, 1, 3, '2024-01-20 15:00:00', '2024-01-20 15:15:00', 900),
+('CALL20240119001', 8, 4, 2, 3, '2024-01-19 17:00:00', '2024-01-19 17:30:00', 1800),
+('CALL20240120002', 2, 7, 1, 4, '2024-01-20 16:00:00', NULL, 0);
+
+-- 15. 公告表
+INSERT INTO `announcements` (`title`, `content`, `type`, `priority`, `status`, `publish_time`, `view_count`, `created_by`) VALUES
+('平台升级通知', '为了提供更好的服务，平台将于2024年2月1日进行系统升级，升级期间可能无法正常使用，请提前做好准备。', 1, 2, 1, '2024-01-15 10:00:00', 1250, 1),
+('春节假期安排', '春节期间（2024年2月10日-2月17日）平台正常运营，教师和学生们可以正常预约课程。祝大家春节快乐！', 2, 1, 1, '2024-01-18 14:00:00', 890, 1),
+('新功能上线：在线评价', '为了更好地了解教学质量，平台新增在线评价功能，课程完成后可以对教师进行评价，感谢大家的支持！', 1, 1, 1, '2024-01-20 09:00:00', 560, 1),
+('系统维护通知', '系统将于2024年1月25日 00:00-02:00 进行维护，维护期间暂停服务，给您带来不便敬请谅解。', 3, 3, 1, '2024-01-20 16:00:00', 320, 1);
+
+-- 16. 操作日志表
+INSERT INTO `operation_logs` (`user_id`, `username`, `operation_type`, `module`, `content`, `request_method`, `request_url`, `ip_address`, `status`, `created_at`) VALUES
+(7, 'student001', 'login', 'auth', '用户登录', 'POST', '/api/auth/login', '192.168.1.201', 1, '2024-01-20 10:15:00'),
+(2, 'teacher001', 'login', 'auth', '用户登录', 'POST', '/api/auth/login', '192.168.1.101', 1, '2024-01-20 09:30:00'),
+(7, 'student001', 'create', 'appointment', '创建预约：ORD20240120001', 'POST', '/api/appointment', '192.168.1.201', 1, '2024-01-20 10:30:00'),
+(2, 'teacher001', 'update', 'appointment', '确认预约：ORD20240120001', 'PUT', '/api/appointment/1/confirm', '192.168.1.101', 1, '2024-01-20 11:00:00'),
+(7, 'student001', 'create', 'payment', '上传支付凭证：PAY20240115001', 'POST', '/api/payment/1/proof', '192.168.1.201', 1, '2024-01-16 10:00:00'),
+(2, 'teacher001', 'update', 'payment', '确认收款：PAY20240115001', 'PUT', '/api/payment/1/confirm', '192.168.1.101', 1, '2024-01-16 15:00:00'),
+(7, 'student001', 'create', 'review', '创建评价：预约ID 7', 'POST', '/api/review', '192.168.1.201', 1, '2024-01-16 20:00:00'),
+(1, 'admin', 'update', 'refund', '审核退款：REF20240120001', 'PUT', '/api/refund/1/audit', '192.168.1.100', 1, '2024-01-20 10:00:00');
+
+-- 17. 通知表
+INSERT INTO `notifications` (`user_id`, `type`, `title`, `content`, `related_id`, `related_type`, `is_read`, `read_at`, `created_at`) VALUES
+(7, 2, '预约已确认', '您的预约（ORD20240120001）已被教师确认，请按时参加课程', 1, 'appointment', 1, '2024-01-20 11:05:00', '2024-01-20 11:00:00'),
+(7, 3, '支付提醒', '您的课程已完成，请及时支付费用', 1, 'payment', 1, '2024-01-15 21:05:00', '2024-01-15 21:00:00'),
+(7, 3, '支付已确认', '您的支付（PAY20240115001）已被教师确认', 1, 'payment', 1, '2024-01-16 15:05:00', '2024-01-16 15:00:00'),
+(7, 4, '评价提醒', '您的课程已完成，可以对教师进行评价', 7, 'appointment', 0, NULL, '2024-01-15 21:00:00'),
+(8, 2, '预约已确认', '您的预约（ORD20240120002）已被教师确认，请按时参加课程', 2, 'appointment', 1, '2024-01-20 12:05:00', '2024-01-20 12:00:00'),
+(9, 3, '支付提醒', '您的课程已完成，请及时支付费用', 3, 'payment', 0, NULL, '2024-01-23 21:30:00'),
+(10, 3, '支付已确认', '您的支付（PAY20240124001）已被教师确认', 4, 'payment', 1, '2024-01-25 16:05:00', '2024-01-25 16:00:00'),
+(7, 7, '退款审核通过', '您的退款申请（REF20240120001）已通过审核，退款将尽快处理', 1, 'refund', 1, '2024-01-20 10:05:00', '2024-01-20 10:00:00'),
+(2, 4, '收到新评价', '学生 张小明 对您进行了评价，请查看', 1, 'review', 1, '2024-01-16 20:05:00', '2024-01-16 20:00:00'),
+(4, 4, '收到新评价', '学生 李小红 对您进行了评价，请查看', 2, 'review', 0, NULL, '2024-01-16 21:00:00'),
+(2, 5, '新消息', '您收到一条新消息', 1, 'chat', 0, NULL, '2024-01-20 14:30:00'),
+(7, 5, '新消息', '您收到一条新消息', 1, 'chat', 1, '2024-01-20 14:05:00', '2024-01-20 14:00:00');
+
+-- 18. 文件上传记录表
+INSERT INTO `file_uploads` (`user_id`, `file_name`, `file_path`, `file_url`, `file_type`, `file_size`, `mime_type`, `upload_source`, `related_id`, `related_type`) VALUES
+(2, 'avatar.jpg', '/uploads/avatars/2024/01/teacher001_avatar.jpg', 'https://example.com/avatars/teacher001.jpg', 'image', 102400, 'image/jpeg', 'avatar', 2, 'user'),
+(7, 'avatar.png', '/uploads/avatars/2024/01/student001_avatar.png', 'https://example.com/avatars/student001.jpg', 'image', 98304, 'image/png', 'avatar', 7, 'user'),
+(2, 'degree_certificate.jpg', '/uploads/certificates/2024/01/teacher001_degree.jpg', 'https://example.com/certificates/teacher001_degree.jpg', 'image', 512000, 'image/jpeg', 'certificate', 1, 'certification'),
+(7, 'payment_proof.jpg', '/uploads/payments/2024/01/pay001.jpg', 'https://example.com/proof/pay001.jpg', 'image', 256000, 'image/jpeg', 'payment', 1, 'payment'),
+(10, 'review_image.jpg', '/uploads/reviews/2024/01/review001.jpg', 'https://example.com/review/review001.jpg', 'image', 204800, 'image/jpeg', 'review', 4, 'review'),
+(2, 'chat_image.png', '/uploads/chat/2024/01/chat001.png', 'https://example.com/chat/chat001.png', 'image', 128000, 'image/png', 'message', 1, 'chat_message');
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================

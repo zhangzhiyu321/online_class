@@ -34,6 +34,23 @@
 - [ ] `GET /api/payment/{id}` - 获取支付详情
 - [ ] `POST /api/payment/{id}/proof` - 上传支付凭证
 
+### ✅ 退款相关（3个接口）
+- [ ] `POST /api/refund` - 申请退款
+- [ ] `GET /api/refund/list` - 获取退款列表
+- [ ] `GET /api/refund/{id}` - 获取退款详情
+
+### ✅ 评价相关（2个接口）
+- [ ] `POST /api/review` - 创建评价
+- [ ] `GET /api/review/{id}` - 获取评价详情
+
+### ✅ 通知相关（6个接口）
+- [ ] `GET /api/notification/list` - 获取通知列表
+- [ ] `GET /api/notification/{id}` - 获取通知详情
+- [ ] `PUT /api/notification/{id}/read` - 标记通知为已读
+- [ ] `PUT /api/notification/read-all` - 标记所有通知为已读
+- [ ] `GET /api/notification/unread-count` - 获取未读通知数量
+- [ ] `DELETE /api/notification/{id}` - 删除通知
+
 ### ✅ 聊天相关（7个接口）
 - [ ] `GET /api/chat/relationships` - 获取聊天列表
 - [ ] `GET /api/chat/relationship/{relationshipId}` - 获取聊天关系详情
@@ -54,12 +71,12 @@
 
 ---
 
-## 总计：34个接口
+## 总计：47个接口
 
 ### 已实现：2个
 - ✅ 公告列表和详情（已有实现）
 
-### 待实现：32个
+### 待实现：45个
 
 ---
 
@@ -78,11 +95,14 @@
 
 **预计时间**：3-4天
 
-### 第3步：业务功能（10个接口）
+### 第3步：业务功能（18个接口）
 6. 支付相关接口（列表、详情、上传凭证）
-7. 聊天相关接口（列表、消息、发送、撤回、已读、未读数）
+7. 退款相关接口（申请、列表、详情）
+8. 评价相关接口（创建、详情）
+9. 通知相关接口（列表、详情、标记已读、未读数、删除）
+10. 聊天相关接口（列表、消息、发送、撤回、已读、未读数）
 
-**预计时间**：4-5天
+**预计时间**：6-7天
 
 ---
 
