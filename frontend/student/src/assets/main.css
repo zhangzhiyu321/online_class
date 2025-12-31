@@ -1,25 +1,43 @@
+/**
+ * 全局样式文件 (main.css)
+ * 
+ * 功能：
+ * 1. 全局基础样式重置和变量定义
+ * 2. 通用工具类和响应式断点
+ * 3. Element Plus 组件样式覆盖和优化
+ * 4. 统一的动画效果和过渡
+ * 5. 深色主题支持
+ * 6. 统一的按钮、输入框、下拉框等组件样式
+ */
+
 @import './base.css';
 
-/* 全局样式 */
+/* ========== 全局样式重置 ========== */
+
+/* 全局样式重置（移除所有元素的默认margin和padding，统一使用border-box盒模型） */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
+/* Body 基础样式
+ * 设置字体族、字体平滑、背景色、文字颜色等全局样式
+ */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
     'Noto Color Emoji';
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased; /* 字体平滑（macOS/iOS） */
+  -moz-osx-font-smoothing: grayscale; /* 字体平滑（Firefox macOS） */
   background-color: var(--color-bgSecondary, #f5f7fa);
   color: var(--color-textPrimary, #1a1a1a);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease; /* 主题切换时的平滑过渡 */
   min-height: 100vh;
   position: relative;
 }
 
+/* 应用根容器（占满视口高度） */
 #app {
   min-height: 100vh;
 }
@@ -400,7 +418,7 @@ body {
   border-radius: 20px 20px 0 0 !important;
 }
 
-/* 下拉菜单圆角优化 - iOS 16 毛玻璃效果 */
+/* 下拉菜单圆角优化 - iOS 16 毛玻璃效果（el-dropdown 使用） */
 .el-dropdown-menu {
   border-radius: 16px !important;
   padding: 8px !important;
@@ -422,8 +440,170 @@ body {
   transform: translateX(4px);
 }
 
-/* 选择器圆角优化 - iOS 16 毛玻璃效果 */
-.el-select-dropdown {
+/* ========== 统一的动画效果 ========== */
+
+/**
+ * 下拉框弹跳动画
+ * 用于所有下拉框（el-select、el-dropdown）的打开动画
+ * 效果：从上方淡入并带有轻微弹跳效果
+ */
+@keyframes dropdownBounce {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(2px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/**
+ * 图标跳动动画
+ * 用于移动端底部导航图标的选中动画效果
+ * 效果：图标轻微放大并上移，然后恢复原状
+ */
+@keyframes iconBounce {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.08) translateY(-2px);
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ========== 统一的按钮触发器样式（home-button, user-info, filter-dropdown-trigger） ========== */
+
+/**
+ * 通用按钮触发器基础样式
+ * 
+ * 适用范围：
+ * - .home-button: 首页按钮
+ * - .user-info: 用户信息下拉框触发器
+ * - .filter-dropdown-trigger: 筛选下拉框触发器
+ * 
+ * 统一的样式特征：
+ * - 圆角：12px
+ * - 背景：浅灰色 (#f9fafb)
+ * - 边框：浅灰色 (#e5e7eb)
+ * - 悬停效果：背景变深、边框变深、轻微上移
+ * - 过渡动画：平滑的transform和背景色过渡
+ */
+.home-button,
+.user-info,
+.filter-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  padding: 8px 12px;
+  border-radius: 12px;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  will-change: transform;
+  transform: translateZ(0);
+  box-sizing: border-box;
+  font-size: 14px;
+  color: #1a1a1a;
+  line-height: 1.5;
+}
+
+.home-button:hover,
+.user-info:hover,
+.filter-dropdown-trigger:hover {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  transform: translateY(-1px) translateZ(0);
+}
+
+/* 通用箭头图标样式 */
+.user-info .arrow-icon,
+.filter-dropdown-trigger .arrow-icon {
+  color: #6b7280;
+  transition: color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+}
+
+.user-info:hover .arrow-icon,
+.filter-dropdown-trigger:hover .arrow-icon {
+  color: #409eff;
+}
+
+/* 激活状态：箭头图标变蓝 */
+.filter-dropdown-trigger.active .arrow-icon {
+  color: #409eff;
+}
+
+/* 通用图标样式 */
+.home-button .el-icon,
+.user-info .user-icon {
+  color: #6b7280;
+  transition: color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.home-button:hover .el-icon,
+.user-info:hover .user-icon {
+  color: #409eff;
+}
+
+/* 用户下拉框激活时，只有用户图标变蓝 */
+.user-info.active .user-icon {
+  color: #409eff !important;
+}
+
+.user-info.active .arrow-icon {
+  color: #6b7280 !important;
+}
+
+.user-info.active {
+  background-color: #f9fafb;
+  border-color: #e5e7eb;
+}
+
+/* 筛选下拉框激活状态 */
+.filter-dropdown-trigger.active span {
+  color: #409eff;
+}
+
+.filter-dropdown-trigger span {
+  flex: 1;
+  text-align: left;
+  color: #6b7280;
+}
+
+/* 清除图标样式 */
+.filter-dropdown-trigger .clear-icon {
+  color: #9ca3af;
+  transition: color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 14px;
+  margin-left: 4px;
+}
+
+.filter-dropdown-trigger .clear-icon:hover {
+  color: #6b7280;
+}
+
+/* 下拉菜单选中项样式 */
+.el-dropdown-menu__item.is-selected {
+  color: #409eff !important;
+  font-weight: 500 !important;
+}
+
+/* ========== 统一的下拉框样式和动画 - 用于所有下拉框（el-select、el-dropdown） ========== */
+
+/* 统一的下拉菜单容器样式和动画 - el-select 和 el-dropdown 共用 */
+.el-select-dropdown,
+.user-dropdown-popper {
   border-radius: 16px !important;
   overflow: hidden !important;
   background: var(--glass-bg-dark) !important;
@@ -431,12 +611,66 @@ body {
   -webkit-backdrop-filter: var(--glass-backdrop-strong) !important;
   border: 1px solid var(--glass-border) !important;
   box-shadow: var(--glass-shadow) !important;
+  animation: dropdownBounce 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  will-change: transform, opacity;
 }
 
 .el-select-dropdown__item {
   border-radius: 8px !important;
   margin: 2px 4px !important;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* el-select 输入框样式统一 - 与用户下拉框样式一致 */
+.el-select .el-input__wrapper {
+  border-radius: 16px !important;
+  padding: 6px 12px !important;
+  background: #f9fafb !important;
+  border: 1px solid #e5e7eb !important;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  height: 44px !important;
+  box-sizing: border-box !important;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.el-select:hover .el-input__wrapper {
+  background-color: #f3f4f6 !important;
+  border-color: #d1d5db !important;
+  transform: translateY(-1px) translateZ(0) !important;
+}
+
+/* el-select 选中/聚焦时的样式 */
+.el-select.is-focus .el-input__wrapper,
+.el-select .el-input.is-focus .el-input__wrapper {
+  background-color: #f9fafb !important;
+  border-color: #409eff !important;
+}
+
+.el-select .el-input__suffix {
+  color: #6b7280;
+  transition: color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.el-select:hover .el-input__suffix,
+.el-select.is-focus .el-input__suffix {
+  color: #409eff;
+}
+
+/* 统一输入框 append 中按钮的边框样式 - 确保与独立按钮一致 */
+.el-input-group__append .el-button,
+.el-input-group__prepend .el-button {
+  border: 1px solid var(--glass-border) !important;
+  border-radius: 12px !important;
+}
+
+/* 移除 Element Plus 默认的 append 容器边框样式 */
+.el-input-group__append {
+  border: none !important;
+  background: transparent !important;
+  padding: 0 !important;
 }
 
 /* 日期选择器圆角优化 - iOS 16 毛玻璃效果 */
@@ -485,9 +719,6 @@ body.theme-dark {
   --glass-bg-dark: #1f2937;
   --glass-border: #374151;
   --glass-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-body.theme-dark {
   background-color: var(--color-bgSecondary) !important;
   color: var(--color-textPrimary) !important;
 }
