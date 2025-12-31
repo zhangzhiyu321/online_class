@@ -1,13 +1,23 @@
+<!--
+  登录页面组件 (Login)
+  功能：
+  1. 账号密码登录
+  2. 手机号验证码登录
+  3. 第三方登录（微信、QQ）
+  4. 表单验证和错误提示
+  5. 登录成功后的路由跳转
+-->
 <template>
   <div class="login-container">
     <div class="login-box">
+      <!-- 登录页头部（Logo和标题） -->
       <div class="login-header">
         <el-icon :size="48" color="#409eff"><School /></el-icon>
         <h2>****</h2>
         <p>学生登录</p>
       </div>
 
-      <!-- 登录方式切换标签 -->
+      <!-- 登录方式切换标签（账号登录/手机登录） -->
       <el-tabs v-model="activeTab" class="login-tabs">
         <el-tab-pane label="账号登录" name="account">
           <el-form
@@ -138,6 +148,11 @@
 </template>
 
 <script setup>
+/**
+ * 登录页面 - Script Setup
+ * 使用 Composition API 实现组件逻辑
+ */
+
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
@@ -146,70 +161,106 @@ import { login, phoneLogin, sendSmsCode, wechatLogin, qqLogin } from '@/api/user
 import { ElMessage } from 'element-plus'
 import { User, Lock, Phone, Message, School } from '@element-plus/icons-vue'
 
-const router = useRouter()
-const userStore = useUserStore()
-const themeStore = useThemeStore()
+// ========== 路由和状态管理 ==========
+const router = useRouter() // Vue Router 实例，用于页面跳转
+const userStore = useUserStore() // 用户状态管理 Store
+const themeStore = useThemeStore() // 主题状态管理 Store
 
-// 初始化主题
+// ========== 生命周期钩子 ==========
+
+/**
+ * 组件挂载时初始化主题
+ * 从本地存储中恢复用户的主题偏好设置
+ */
 onMounted(() => {
   themeStore.initTheme()
 })
 
-// 登录方式切换
+// ========== 响应式数据定义 ==========
+
+/**
+ * 当前激活的登录方式标签
+ * 'account': 账号登录
+ * 'phone': 手机登录
+ */
 const activeTab = ref('phone')
 
-// 账号登录表单
+/**
+ * 账号登录表单数据
+ */
 const loginForm = ref({
-  username: '',
-  password: ''
+  username: '', // 用户名
+  password: ''  // 密码
 })
 
-const loginFormRef = ref()
-const loading = ref(false)
+const loginFormRef = ref() // 账号登录表单的引用（用于表单验证）
+const loading = ref(false) // 登录按钮加载状态
 
+/**
+ * 账号登录表单验证规则
+ */
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
-// 手机号登录表单
+/**
+ * 手机号登录表单数据
+ */
 const phoneForm = ref({
-  phone: '',
-  code: ''
+  phone: '', // 手机号
+  code: ''   // 验证码
 })
 
-const phoneFormRef = ref()
-const sendingCode = ref(false)
-const codeCountdown = ref(0)
-let countdownTimer = null
+const phoneFormRef = ref() // 手机登录表单的引用（用于表单验证）
+const sendingCode = ref(false) // 发送验证码按钮加载状态
+const codeCountdown = ref(0) // 验证码倒计时（秒）
+let countdownTimer = null // 倒计时定时器
 
+/**
+ * 手机登录表单验证规则
+ */
 const phoneRules = {
   phone: [
     { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' } // 手机号格式验证
   ],
   code: [
     { required: true, message: '请输入验证码', trigger: 'blur' },
-    { pattern: /^\d{6}$/, message: '验证码为6位数字', trigger: 'blur' }
+    { pattern: /^\d{6}$/, message: '验证码为6位数字', trigger: 'blur' } // 验证码必须是6位数字
   ]
 }
 
-// 第三方登录loading状态
+/**
+ * 第三方登录加载状态
+ * 'wechat': 微信登录中
+ * 'qq': QQ登录中
+ * '': 无登录操作
+ */
 const socialLoading = ref('')
 
-// 账号登录
+// ========== 事件处理方法 ==========
+
+/**
+ * 处理账号登录
+ * 验证表单 -> 调用登录API -> 保存token和用户信息 -> 跳转到教师列表页
+ */
 const handleLogin = async () => {
   if (!loginFormRef.value) return
+  // 表单验证
   await loginFormRef.value.validate((valid) => {
     if (!valid) return
   })
 
   loading.value = true
   try {
+    // 调用登录API
     const res = await login(loginForm.value)
+    // 保存token和用户信息到Store
     userStore.setToken(res.token)
     userStore.setUserInfo(res.userInfo)
     ElMessage.success('登录成功')
+    // 跳转到教师列表页
     router.push('/teachers')
   } catch (error) {
     ElMessage.error(error.message || '登录失败')
@@ -218,24 +269,30 @@ const handleLogin = async () => {
   }
 }
 
-// 发送验证码
+/**
+ * 发送短信验证码
+ * 先验证手机号 -> 调用发送验证码API -> 开始60秒倒计时
+ */
 const sendCode = async () => {
   if (!phoneFormRef.value) return
   
-  // 先验证手机号
+  // 先验证手机号字段
   await phoneFormRef.value.validateField('phone', async (valid) => {
     if (!valid) return
     
     sendingCode.value = true
     try {
+      // 调用发送验证码API
       await sendSmsCode(phoneForm.value.phone)
       ElMessage.success('验证码已发送')
       
-      // 开始倒计时
+      // 开始60秒倒计时
       codeCountdown.value = 60
+      // 清除之前的定时器（如果存在）
       if (countdownTimer) {
         clearInterval(countdownTimer)
       }
+      // 创建新的倒计时定时器
       countdownTimer = setInterval(() => {
         codeCountdown.value--
         if (codeCountdown.value <= 0) {
@@ -251,19 +308,26 @@ const sendCode = async () => {
   })
 }
 
-// 手机号登录
+/**
+ * 处理手机号登录
+ * 验证表单 -> 调用手机登录API -> 保存token和用户信息 -> 跳转到教师列表页
+ */
 const handlePhoneLogin = async () => {
   if (!phoneFormRef.value) return
+  // 表单验证
   await phoneFormRef.value.validate((valid) => {
     if (!valid) return
   })
 
   loading.value = true
   try {
+    // 调用手机登录API
     const res = await phoneLogin(phoneForm.value)
+    // 保存token和用户信息到Store
     userStore.setToken(res.token)
     userStore.setUserInfo(res.userInfo)
     ElMessage.success('登录成功')
+    // 跳转到教师列表页
     router.push('/teachers')
   } catch (error) {
     ElMessage.error(error.message || '登录失败')
@@ -272,11 +336,16 @@ const handlePhoneLogin = async () => {
   }
 }
 
-// 微信登录
+/**
+ * 处理微信登录
+ * 获取微信授权URL -> 跳转到微信授权页面
+ */
 const handleWechatLogin = async () => {
   socialLoading.value = 'wechat'
   try {
+    // 构建回调URL（微信授权成功后的回调地址）
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/wechat/callback`)
+    // 获取微信授权URL
     const wechatAuthUrl = await wechatLogin(redirectUri)
     // 跳转到微信授权页面
     window.location.href = wechatAuthUrl
@@ -286,11 +355,16 @@ const handleWechatLogin = async () => {
   }
 }
 
-// QQ登录
+/**
+ * 处理QQ登录
+ * 获取QQ授权URL -> 跳转到QQ授权页面
+ */
 const handleQQLogin = async () => {
   socialLoading.value = 'qq'
   try {
+    // 构建回调URL（QQ授权成功后的回调地址）
     const redirectUri = encodeURIComponent(`${window.location.origin}/auth/qq/callback`)
+    // 获取QQ授权URL
     const qqAuthUrl = await qqLogin(redirectUri)
     // 跳转到QQ授权页面
     window.location.href = qqAuthUrl
@@ -300,7 +374,12 @@ const handleQQLogin = async () => {
   }
 }
 
-// 组件卸载时清理定时器
+// ========== 生命周期钩子 ==========
+
+/**
+ * 组件卸载时清理定时器
+ * 防止内存泄漏
+ */
 onUnmounted(() => {
   if (countdownTimer) {
     clearInterval(countdownTimer)
@@ -309,6 +388,9 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* ========== 登录容器样式 ========== */
+
+/* 登录页面容器（居中显示，占满视口高度） */
 .login-container {
   min-height: 100vh;
   display: flex;
@@ -317,10 +399,11 @@ onUnmounted(() => {
   background: var(--color-bgSecondary, #f9fafb);
   padding: 20px;
   will-change: transform;
-  transform: translateZ(0);
-  transition: background-color 0.3s ease;
+  transform: translateZ(0); /* GPU加速 */
+  transition: background-color 0.3s ease; /* 主题切换时的平滑过渡 */
 }
 
+/* 登录框容器（卡片样式，带悬停效果） */
 .login-box {
   width: 100%;
   max-width: 400px;
@@ -334,7 +417,7 @@ onUnmounted(() => {
               background-color 0.3s ease,
               border-color 0.3s ease;
   will-change: transform;
-  transform: translateZ(0);
+  transform: translateZ(0); /* GPU加速 */
 }
 
 .login-box:hover {
@@ -342,6 +425,9 @@ onUnmounted(() => {
   transform: translateY(-2px) translateZ(0);
 }
 
+/* ========== 登录头部样式 ========== */
+
+/* 登录头部（Logo、标题、副标题） */
 .login-header {
   text-align: center;
   margin-bottom: 30px;
@@ -373,6 +459,9 @@ onUnmounted(() => {
   transition: color 0.3s ease;
 }
 
+/* ========== 登录表单样式 ========== */
+
+/* 登录表单容器 */
 .login-form {
   margin-top: 30px;
 }
@@ -429,6 +518,9 @@ onUnmounted(() => {
   font-size: 16px;
 }
 
+/* ========== 验证码输入框样式 ========== */
+
+/* 验证码输入框容器（输入框 + 获取验证码按钮） */
 .code-input-wrapper {
   display: flex;
   gap: 12px;
@@ -458,6 +550,9 @@ onUnmounted(() => {
   width: 100%;
 }
 
+/* ========== 第三方登录样式 ========== */
+
+/* 第三方登录区域容器 */
 .social-login {
   margin-top: 30px;
 }
@@ -541,6 +636,9 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
+/* ========== 响应式设计 ========== */
+
+/* 移动端样式（屏幕宽度 <= 767px） */
 @media (max-width: 767px) {
   .login-box {
     padding: 30px 20px;

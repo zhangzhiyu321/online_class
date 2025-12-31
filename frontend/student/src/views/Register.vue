@@ -1,6 +1,14 @@
+<!--
+  注册页面组件 (Register)
+  功能：
+  1. 用户注册（用户名、密码、昵称、手机号等）
+  2. 表单验证（密码长度、确认密码一致性、手机号格式等）
+  3. 注册成功后的路由跳转
+-->
 <template>
   <div class="register-container">
     <div class="register-box">
+      <!-- 注册页头部（Logo和标题） -->
       <div class="register-header">
         <el-icon :size="48" color="#409eff"><School /></el-icon>
         <h2>学生注册</h2>
@@ -75,6 +83,11 @@
 </template>
 
 <script setup>
+/**
+ * 注册页面 - Script Setup
+ * 使用 Composition API 实现组件逻辑
+ */
+
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useThemeStore } from '@/stores/theme'
@@ -82,26 +95,46 @@ import { register } from '@/api/user'
 import { ElMessage } from 'element-plus'
 import { User, Lock, Phone, School } from '@element-plus/icons-vue'
 
-const router = useRouter()
-const themeStore = useThemeStore()
+// ========== 路由和状态管理 ==========
+const router = useRouter() // Vue Router 实例，用于页面跳转
+const themeStore = useThemeStore() // 主题状态管理 Store
 
-// 初始化主题
+// ========== 生命周期钩子 ==========
+
+/**
+ * 组件挂载时初始化主题
+ * 从本地存储中恢复用户的主题偏好设置
+ */
 onMounted(() => {
   themeStore.initTheme()
 })
 
+// ========== 响应式数据定义 ==========
+
+/**
+ * 注册表单数据
+ */
 const registerForm = ref({
-  username: '',
-  password: '',
-  confirmPassword: '',
-  nickname: '',
-  phone: '',
-  role: 1 // 学生角色
+  username: '',        // 用户名（必填）
+  password: '',        // 密码（必填，至少6位）
+  confirmPassword: '', // 确认密码（必填，需与密码一致）
+  nickname: '',        // 昵称（必填）
+  phone: '',           // 手机号（选填，如填写需符合格式）
+  role: 1              // 用户角色（1: 学生角色）
 })
 
-const registerFormRef = ref()
-const loading = ref(false)
+const registerFormRef = ref() // 注册表单的引用（用于表单验证）
+const loading = ref(false) // 注册按钮加载状态
 
+// ========== 表单验证方法 ==========
+
+/**
+ * 自定义密码验证器
+ * 验证密码长度是否至少6位
+ * @param {Object} rule - 验证规则对象
+ * @param {string} value - 密码值
+ * @param {Function} callback - 验证回调函数
+ */
 const validatePassword = (rule, value, callback) => {
   if (value.length < 6) {
     callback(new Error('密码长度不能少于6位'))
@@ -110,6 +143,13 @@ const validatePassword = (rule, value, callback) => {
   }
 }
 
+/**
+ * 自定义确认密码验证器
+ * 验证确认密码是否与密码一致
+ * @param {Object} rule - 验证规则对象
+ * @param {string} value - 确认密码值
+ * @param {Function} callback - 验证回调函数
+ */
 const validateConfirmPassword = (rule, value, callback) => {
   if (value !== registerForm.value.password) {
     callback(new Error('两次输入的密码不一致'))
@@ -118,36 +158,48 @@ const validateConfirmPassword = (rule, value, callback) => {
   }
 }
 
+/**
+ * 注册表单验证规则
+ */
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
-    { validator: validatePassword, trigger: 'blur' }
+    { validator: validatePassword, trigger: 'blur' } // 使用自定义验证器
   ],
   confirmPassword: [
     { required: true, message: '请再次输入密码', trigger: 'blur' },
-    { validator: validateConfirmPassword, trigger: 'blur' }
+    { validator: validateConfirmPassword, trigger: 'blur' } // 使用自定义验证器
   ],
   nickname: [{ required: true, message: '请输入昵称', trigger: 'blur' }],
   phone: [
     {
-      pattern: /^1[3-9]\d{9}$/,
+      pattern: /^1[3-9]\d{9}$/, // 手机号格式验证（11位，以1开头，第二位为3-9）
       message: '请输入正确的手机号',
       trigger: 'blur'
     }
   ]
 }
 
+// ========== 事件处理方法 ==========
+
+/**
+ * 处理用户注册
+ * 验证表单 -> 调用注册API -> 提示成功 -> 跳转到登录页
+ */
 const handleRegister = async () => {
   if (!registerFormRef.value) return
+  // 表单验证
   await registerFormRef.value.validate((valid) => {
     if (!valid) return
   })
 
   loading.value = true
   try {
+    // 调用注册API
     await register(registerForm.value)
     ElMessage.success('注册成功，请登录')
+    // 跳转到登录页
     router.push('/login')
   } catch (error) {
     ElMessage.error(error.message || '注册失败')
@@ -158,6 +210,9 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
+/* ========== 注册容器样式 ========== */
+
+/* 注册页面容器（居中显示，占满视口高度） */
 .register-container {
   min-height: 100vh;
   display: flex;
@@ -166,10 +221,11 @@ const handleRegister = async () => {
   background: var(--color-bgSecondary, #f9fafb);
   padding: 20px;
   will-change: transform;
-  transform: translateZ(0);
-  transition: background-color 0.3s ease;
+  transform: translateZ(0); /* GPU加速 */
+  transition: background-color 0.3s ease; /* 主题切换时的平滑过渡 */
 }
 
+/* 注册框容器（卡片样式，带悬停效果） */
 .register-box {
   width: 100%;
   max-width: 400px;
@@ -183,7 +239,7 @@ const handleRegister = async () => {
               background-color 0.3s ease,
               border-color 0.3s ease;
   will-change: transform;
-  transform: translateZ(0);
+  transform: translateZ(0); /* GPU加速 */
 }
 
 .register-box:hover {

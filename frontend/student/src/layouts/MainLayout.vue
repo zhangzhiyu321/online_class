@@ -1,9 +1,23 @@
+<!--
+  主布局组件 (MainLayout)
+  功能：
+  1. 顶部导航栏（首页按钮、Logo、菜单项、用户下拉菜单）
+  2. 主内容区域（路由视图）
+  3. 首页侧边栏（抽屉式）
+  4. 移动端底部导航栏
+  5. 未读消息和通知数量显示
+  6. 用户下拉菜单（个人中心、退出登录）
+-->
 <template>
   <div class="main-layout">
-    <!-- 顶部导航栏 -->
+    <!-- 顶部导航栏（固定定位，始终显示在页面顶部） -->
     <el-header class="header">
       <div class="header-content">
         <div class="header-left">
+          <div class="home-button" @click="handleHomeClick">
+            <el-icon :size="24"><HomeFilled /></el-icon>
+            <span class="home-text">首页</span>
+          </div>
           <div class="logo">
             <el-icon><School /></el-icon>
             <span class="logo-text">线上家教</span>
@@ -49,18 +63,19 @@
           </el-menu>
           <el-dropdown 
             @command="handleCommand"
+            @visible-change="handleDropdownVisibleChange"
+            trigger="click"
             :placement="'bottom-end'"
             :popper-options="{ strategy: 'fixed' }"
+            popper-class="user-dropdown-popper"
           >
-            <div class="user-info">
-              <el-avatar :src="userStore.userInfo?.avatar" :size="32">
-                <el-icon><User /></el-icon>
-              </el-avatar>
+            <div class="user-info" :class="{ active: isUserDropdownOpen }">
+              <el-icon :size="24" class="user-icon"><UserFilled /></el-icon>
               <span class="username">{{ userStore.userInfo?.nickname || '用户' }}</span>
-              <el-icon><ArrowDown /></el-icon>
+              <el-icon class="arrow-icon"><ArrowDown /></el-icon>
             </div>
             <template #dropdown>
-              <el-dropdown-menu>
+              <el-dropdown-menu class="user-dropdown-menu">
                 <el-dropdown-item command="profile">
                   <el-icon><User /></el-icon>
                   个人中心
@@ -77,9 +92,25 @@
     </el-header>
 
     <!-- 主内容区 -->
-    <el-main class="main-content">
+    <el-main class="main-content" :class="{ 'drawer-open': showHomeDrawer }">
       <router-view />
     </el-main>
+
+    <!-- 首页侧边栏 -->
+    <transition name="drawer-fade">
+      <div v-if="showHomeDrawer" class="drawer-backdrop" @click="closeHomeDrawer"></div>
+    </transition>
+    <transition name="drawer-slide">
+      <div v-if="showHomeDrawer" class="home-drawer">
+        <div class="drawer-header">
+          <h2 class="drawer-title">首页</h2>
+          <el-icon class="drawer-close" @click="closeHomeDrawer"><Close /></el-icon>
+        </div>
+        <div class="drawer-content">
+          <HomeView />
+        </div>
+      </div>
+    </transition>
 
     <!-- 移动端底部导航 -->
     <div 
@@ -96,8 +127,8 @@
         :data-index="item.index"
         @click="handleMobileNav(item.index)"
       >
-        <el-icon :size="24">
-          <component :is="item.icon" />
+        <el-icon :size="24" class="nav-icon">
+          <component :is="activeMenu === item.index ? item.icon : item.iconOutline" />
         </el-icon>
         <span>{{ item.label }}</span>
         <el-badge
@@ -111,7 +142,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, reactive } from 'vue'
+/**
+ * 主布局组件 - Script Setup
+ * 使用 Composition API 实现组件逻辑
+ */
+
+import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import {
@@ -123,18 +159,38 @@ import {
   ArrowDown,
   SwitchButton,
   HomeFilled,
-  Bell
+  Bell,
+  UserFilled,
+  Close
 } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
+import HomeView from '@/views/HomeView.vue'
 
-const router = useRouter()
-const route = useRoute()
-const userStore = useUserStore()
+// ========== 路由和状态管理 ==========
+const router = useRouter() // Vue Router 实例，用于页面跳转
+const route = useRoute() // 当前路由对象，用于获取当前路径
+const userStore = useUserStore() // 用户状态管理 Store
 
+// ========== 响应式数据定义 ==========
+
+// 未读消息数量
 const unreadCount = ref(0)
+
+// 未读通知数量
 const notificationUnreadCount = ref(0)
 
-// 加载未读消息数
+// 首页侧边栏显示状态（true: 显示, false: 隐藏）
+const showHomeDrawer = ref(false)
+
+// 用户下拉菜单打开状态（用于控制激活样式）
+const isUserDropdownOpen = ref(false)
+
+// ========== 数据加载方法 ==========
+
+/**
+ * 加载未读消息数量
+ * 从API获取当前用户的未读消息数，用于在导航栏显示徽章
+ */
 const loadUnreadCount = async () => {
   try {
     const { getUnreadCount } = await import('@/api/chat')
@@ -146,7 +202,10 @@ const loadUnreadCount = async () => {
   }
 }
 
-// 加载未读通知数
+/**
+ * 加载未读通知数量
+ * 从API获取当前用户的未读通知数，用于在导航栏显示徽章
+ */
 const loadNotificationUnreadCount = async () => {
   try {
     const { getUnreadCount } = await import('@/api/notification')
@@ -158,7 +217,12 @@ const loadNotificationUnreadCount = async () => {
   }
 }
 
-// 路由映射表
+// ========== 路由和菜单配置 ==========
+
+/**
+ * 路由路径到菜单索引的映射表
+ * 用于根据当前路由路径确定哪个菜单项应该高亮显示
+ */
 const routeMap = {
   '/home': 'home',
   '/teachers': 'teachers',
@@ -169,6 +233,11 @@ const routeMap = {
   '/chat': 'chats'
 }
 
+/**
+ * 当前激活的菜单项（计算属性）
+ * 根据当前路由路径自动计算应该高亮的菜单项
+ * 如果路径匹配不到任何映射，默认返回 'teachers'
+ */
 const activeMenu = computed(() => {
   const path = route.path
   for (const [routePath, menuIndex] of Object.entries(routeMap)) {
@@ -179,15 +248,43 @@ const activeMenu = computed(() => {
   return 'teachers'
 })
 
+/**
+ * 移动端底部导航栏配置
+ * 包含导航项的信息：索引、标签文本、图标组件
+ * icon: 选中状态时使用的图标（填充版本或CSS填充）
+ * iconOutline: 未选中状态时使用的图标（线条版本）
+ */
 const mobileNavItems = [
-  { index: 'home', label: '首页', icon: HomeFilled },
-  { index: 'teachers', label: '找教师', icon: User },
-  { index: 'appointments', label: '预约', icon: Calendar },
-  { index: 'payments', label: '支付', icon: Money },
-  { index: 'chats', label: '消息', icon: ChatDotRound }
+  { 
+    index: 'teachers', 
+    label: '找教师', 
+    icon: UserFilled,  // 填充版本（选中时）
+    iconOutline: User  // 线条版本（未选中时）
+  },
+  { 
+    index: 'appointments', 
+    label: '预约', 
+    icon: Calendar,  // 选中时通过CSS填充
+    iconOutline: Calendar  // 线条版本（未选中时）
+  },
+  { 
+    index: 'payments', 
+    label: '支付', 
+    icon: Money,  // 选中时通过CSS填充
+    iconOutline: Money  // 线条版本（未选中时）
+  },
+  { 
+    index: 'chats', 
+    label: '消息', 
+    icon: ChatDotRound,  // 选中时通过CSS填充
+    iconOutline: ChatDotRound  // 线条版本（未选中时）
+  }
 ]
 
-// 菜单索引到路由的映射
+/**
+ * 菜单索引到路由路径的映射表
+ * 用于根据菜单项索引跳转到对应的路由路径
+ */
 const menuRouteMap = {
   'notifications': '/notifications',
   'refunds': '/refunds',
@@ -198,30 +295,78 @@ const menuRouteMap = {
   chats: '/chats'
 }
 
+// ========== 事件处理方法 ==========
+
+/**
+ * 处理首页按钮点击事件
+ * 打开首页侧边栏（抽屉式）
+ */
+const handleHomeClick = () => {
+  showHomeDrawer.value = true
+}
+
+/**
+ * 关闭首页侧边栏
+ */
+const closeHomeDrawer = () => {
+  showHomeDrawer.value = false
+}
+
+/**
+ * 处理菜单项选择事件
+ * @param {string} index - 菜单项索引（如 'home', 'teachers' 等）
+ * 如果点击的是首页，打开侧边栏；否则跳转到对应路由
+ */
 const handleMenuSelect = (index) => {
+  // 如果点击的是首页，打开侧边栏而不是跳转路由
+  if (index === 'home') {
+    handleHomeClick()
+    return
+  }
   const routePath = menuRouteMap[index]
   if (routePath) {
     router.push(routePath)
   }
 }
 
+/**
+ * 处理移动端导航点击事件
+ * @param {string} index - 导航项索引
+ * 移动端底部导航的点击事件处理，复用桌面端菜单选择逻辑
+ */
 const handleMobileNav = (index) => {
   handleMenuSelect(index)
 }
 
-// 触摸滑动交互
+// ========== 移动端触摸交互处理 ==========
+
+/**
+ * 触摸状态对象（响应式）
+ * 用于跟踪移动端底部导航的触摸滑动交互状态
+ */
 const touchState = reactive({
-  startX: 0,
-  startY: 0,
-  isDragging: false,
-  targetIndex: null
+  startX: 0,        // 触摸开始时的X坐标
+  startY: 0,        // 触摸开始时的Y坐标
+  isDragging: false, // 是否正在拖拽
+  targetIndex: null  // 当前目标导航项的索引
 })
 
+/**
+ * 根据坐标点获取对应的导航项元素
+ * @param {number} x - X坐标
+ * @param {number} y - Y坐标
+ * @returns {HTMLElement|null} 导航项元素或null
+ */
 const getNavItemFromPoint = (x, y) => {
   const target = document.elementFromPoint(x, y)
   return target?.closest('.nav-item')
 }
 
+/**
+ * 处理触摸开始事件
+ * 记录触摸起始位置和目标导航项
+ * @param {TouchEvent} e - 触摸事件对象
+ */
 const handleTouchStart = (e) => {
   const touch = e.touches[0]
   touchState.startX = touch.clientX
@@ -234,6 +379,11 @@ const handleTouchStart = (e) => {
   }
 }
 
+/**
+ * 处理触摸移动事件
+ * 判断是否正在拖拽，并更新目标导航项
+ * @param {TouchEvent} e - 触摸事件对象
+ */
 const handleTouchMove = (e) => {
   if (!touchState.targetIndex) return
   
@@ -241,7 +391,7 @@ const handleTouchMove = (e) => {
   const deltaX = Math.abs(touch.clientX - touchState.startX)
   const deltaY = Math.abs(touch.clientY - touchState.startY)
   
-  // 如果移动超过10px，认为是滑动
+  // 如果移动超过10px，认为是滑动（拖拽）
   if (deltaX > 10 || deltaY > 10) {
     touchState.isDragging = true
     const navItem = getNavItemFromPoint(touch.clientX, touch.clientY)
@@ -251,11 +401,15 @@ const handleTouchMove = (e) => {
   }
 }
 
+/**
+ * 处理触摸结束事件
+ * 如果是在拖拽状态下结束，则触发对应导航项的点击事件
+ */
 const handleTouchEnd = () => {
   if (touchState.targetIndex && touchState.isDragging) {
     handleMenuSelect(touchState.targetIndex)
   }
-  // 重置状态
+  // 重置触摸状态
   Object.assign(touchState, {
     startX: 0,
     startY: 0,
@@ -264,9 +418,24 @@ const handleTouchEnd = () => {
   })
 }
 
+/**
+ * 处理用户下拉菜单显示/隐藏状态变化
+ * @param {boolean} visible - 下拉菜单是否可见
+ */
+const handleDropdownVisibleChange = (visible) => {
+  isUserDropdownOpen.value = visible
+}
+
+/**
+ * 处理用户下拉菜单命令选择
+ * @param {string} command - 命令标识（'profile' 或 'logout'）
+ */
 const handleCommand = (command) => {
+  isUserDropdownOpen.value = false
   const commandMap = {
+    // 跳转到个人中心页面
     profile: () => router.push('/profile'),
+    // 退出登录（需要确认）
     logout: () => {
       ElMessageBox.confirm('确定要退出登录吗？', '提示', {
         confirmButtonText: '确定',
@@ -289,14 +458,36 @@ const handleCommand = (command) => {
   }
 }
 
+// ========== 监听器和生命周期 ==========
+
+/**
+ * 监听首页侧边栏状态变化，控制body滚动
+ * 当侧边栏打开时，禁止body滚动（防止背景页面滚动）
+ * 当侧边栏关闭时，恢复body滚动
+ */
+watch(showHomeDrawer, (isOpen) => {
+  if (isOpen) {
+    document.body.style.overflow = 'hidden'
+  } else {
+    document.body.style.overflow = ''
+  }
+})
+
+/**
+ * 组件挂载时的初始化操作
+ * 1. 加载用户信息（如果未加载）
+ * 2. 加载未读消息数和通知数
+ * 3. 设置定时器，每30秒刷新一次未读数量
+ */
 onMounted(() => {
+  // 如果用户信息未加载，则加载用户信息
   if (!userStore.userInfo) {
     userStore.loadUserInfo()
   }
-  // 加载未读消息数和通知数
+  // 立即加载未读消息数和通知数
   loadUnreadCount()
   loadNotificationUnreadCount()
-  // 定期刷新未读消息数和通知数（每30秒）
+  // 设置定时器，每30秒刷新一次未读消息数和通知数（仅在用户已登录时）
   const unreadTimer = setInterval(() => {
     if (userStore.isAuthenticated()) {
       loadUnreadCount()
@@ -304,33 +495,47 @@ onMounted(() => {
     }
   }, 30000)
   
-  // 清理定时器
+  // 返回清理函数（在组件卸载时调用，清理定时器）
   return () => {
     clearInterval(unreadTimer)
   }
 })
+
+/**
+ * 组件卸载时的清理操作
+ * 确保组件卸载时恢复body滚动（防止侧边栏关闭后body仍无法滚动）
+ */
+onUnmounted(() => {
+  document.body.style.overflow = ''
+})
 </script>
 
 <style scoped>
+/* ========== 主布局容器样式 ========== */
+
+/* 主布局容器（垂直布局，占满视口高度） */
 .main-layout {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
 }
 
+/* ========== 顶部导航栏样式 ========== */
+
+/* 顶部导航栏头部（固定定位，始终显示在页面顶部） */
 .header {
   background: #ffffff;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   padding: 0;
   height: 64px;
-  position: sticky;
+  position: sticky; /* 粘性定位，滚动时保持在顶部 */
   top: 0;
-  z-index: 1000;
+  z-index: 1000; /* 确保在其他内容之上 */
   border-bottom: 1px solid #e5e7eb;
   transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
               background 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
-  transform: translateZ(0);
+  will-change: transform; /* 优化性能 */
+  transform: translateZ(0); /* GPU加速 */
 }
 
 .header-content {
@@ -347,6 +552,23 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* home-button 特定样式（覆盖通用样式） */
+.home-button {
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 16px;
+  height: 44px;
+  padding: 6px 12px;
+}
+
+.home-button:hover {
+  color: #409eff;
+}
+
+.home-text {
+  display: none;
 }
 
 .logo {
@@ -404,26 +626,12 @@ onMounted(() => {
   font-weight: 500;
 }
 
+/* user-info 特定样式（覆盖通用样式） */
 .user-info {
-  display: flex;
-  align-items: center;
   gap: 10px;
-  cursor: pointer;
-  padding: 6px 12px;
   border-radius: 16px;
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  will-change: transform;
-  transform: translateZ(0);
-}
-
-.user-info:hover {
-  background-color: #f3f4f6;
-  border-color: #d1d5db;
-  transform: translateY(-1px) translateZ(0);
+  height: 44px;
+  padding: 6px 12px;
 }
 
 .username {
@@ -447,28 +655,28 @@ onMounted(() => {
   transform: translateZ(0);
 }
 
-/* 移动端底部导航 */
+/* ========== 移动端底部导航样式 ========== */
+
+/* 移动端底部导航栏（固定定位在页面底部） */
 .mobile-bottom-nav {
   display: flex;
-  justify-content: space-around;
+  justify-content: space-around; /* 导航项均匀分布 */
   align-items: center;
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
   background: #ffffff;
-  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.1);
-  padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+  padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); /* 适配iPhone等设备的底部安全区域 */
   z-index: 1000;
-  border-top: 1px solid #e5e7eb;
   will-change: transform;
-  transform: translateZ(0);
-  touch-action: pan-y;
-  user-select: none;
+  transform: translateZ(0); /* GPU加速 */
+  touch-action: pan-y; /* 允许垂直滚动，优化触摸交互 */
+  user-select: none; /* 禁止文本选择 */
   -webkit-user-select: none;
-  -webkit-touch-callout: none;
-  -webkit-tap-highlight-color: transparent;
-  -webkit-overflow-scrolling: touch;
+  -webkit-touch-callout: none; /* 禁止长按弹出菜单（iOS） */
+  -webkit-tap-highlight-color: transparent; /* 移除点击高亮 */
+  -webkit-overflow-scrolling: touch; /* iOS平滑滚动 */
 }
 
 .nav-item {
@@ -478,42 +686,88 @@ onMounted(() => {
   gap: 4px;
   padding: 8px 16px;
   cursor: pointer;
-  color: #6b7280;
+  color: #000000;
   font-size: 12px;
   position: relative;
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              background 0.15s cubic-bezier(0.4, 0, 0.2, 1),
-              color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  border-radius: 16px;
-  margin: 0 4px;
-  background: #f9fafb;
+  transition: color 0.2s ease;
   will-change: transform;
   transform: translateZ(0);
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   -webkit-touch-callout: none;
   contain: layout style paint;
+  flex: 1;
 }
 
-.nav-item:hover {
-  background: #f3f4f6;
-  color: #1a1a1a;
-  transform: translateY(-2px) translateZ(0);
+.nav-item .nav-icon {
+  transition: color 0.2s ease, transform 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity 0.2s ease;
+  color: #000000;
+  opacity: 0.5;
+}
+
+/* 未选中状态：图标较淡，看起来像线条 */
+.nav-item .nav-icon :deep(svg) {
+  transition: fill 0.2s ease, stroke 0.2s ease, stroke-width 0.2s ease, opacity 0.2s ease;
+}
+
+/* 选中状态：蓝色填充，图标跳动 */
+.nav-item.active .nav-icon {
+  color: #409eff;
+  opacity: 1;
+  animation: iconBounce 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* 选中状态：强制所有SVG元素使用蓝色填充 */
+.nav-item.active .nav-icon :deep(svg) {
+  color: #409eff !important;
+  fill: #409eff !important;
+}
+
+/* 选中状态：处理所有SVG子元素，确保蓝色填充 */
+/* 首先设置所有元素的基础样式 */
+.nav-item.active .nav-icon :deep(svg *) {
+  fill: #409eff !important;
+  stroke: #409eff !important;
+}
+
+/* 对于所有路径和形状元素，优先使用 fill 填充 */
+.nav-item.active .nav-icon :deep(svg circle),
+.nav-item.active .nav-icon :deep(svg rect),
+.nav-item.active .nav-icon :deep(svg polygon),
+.nav-item.active .nav-icon :deep(svg ellipse) {
+  fill: #409eff !important;
+  stroke: #409eff !important;
+  stroke-width: 0 !important;
+}
+
+/* 对于线条元素（line, polyline），使用粗线条实现填充效果 */
+.nav-item.active .nav-icon :deep(svg line),
+.nav-item.active .nav-icon :deep(svg polyline) {
+  fill: none !important;
+  stroke: #409eff !important;
+  stroke-width: 3 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
+}
+
+/* 对于路径元素，默认尝试使用 fill 填充，但如果原本只有 stroke（线条图标），则加粗 stroke */
+.nav-item.active .nav-icon :deep(svg path) {
+  fill: #409eff !important;
+  stroke: #409eff !important;
+  stroke-width: 2.5 !important;
+  stroke-linecap: round !important;
+  stroke-linejoin: round !important;
 }
 
 .nav-item.active {
-  color: #1a1a1a;
-  background: #f3f4f6;
-  font-weight: 600;
-}
-
-.nav-item:active {
-  transform: scale(0.95) translateZ(0);
+  color: #409eff;
 }
 
 .nav-item span {
   font-size: 12px;
+  transition: color 0.2s ease;
 }
+
 
 .mobile-badge {
   position: absolute;
@@ -524,6 +778,10 @@ onMounted(() => {
 /* 响应式设计 */
 @media (min-width: 768px) {
   .logo-text {
+    display: inline;
+  }
+
+  .home-text {
     display: inline;
   }
 
@@ -550,5 +808,118 @@ onMounted(() => {
     padding-bottom: 70px; /* 为底部导航留出空间 */
   }
 }
+
+/* 侧边栏相关样式 */
+.drawer-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  backdrop-filter: blur(2px);
+}
+
+.drawer-fade-enter-active,
+.drawer-fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.drawer-fade-enter-from,
+.drawer-fade-leave-to {
+  opacity: 0;
+}
+
+.home-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 90vw;
+  background: #ffffff;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  z-index: 2001;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.drawer-slide-enter-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer-slide-leave-active {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.drawer-slide-enter-from {
+  transform: translateX(-100%);
+}
+
+.drawer-slide-leave-to {
+  transform: translateX(-100%);
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+.drawer-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.drawer-close {
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.2s ease;
+  padding: 4px;
+  border-radius: 4px;
+}
+
+.drawer-close:hover {
+  color: #1a1a1a;
+  background: #f3f4f6;
+}
+
+.drawer-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  background: #ffffff;
+}
+
+.drawer-content :deep(.home-view) {
+  max-width: 100%;
+  padding: 24px;
+  min-height: auto;
+}
+
+.main-content.drawer-open {
+  pointer-events: none;
+}
+
+/* 响应式调整 */
+@media (max-width: 767px) {
+  .home-drawer {
+    width: 85vw;
+  }
+
+  .drawer-content :deep(.home-view) {
+    padding: 16px;
+  }
+}
+
 </style>
 
