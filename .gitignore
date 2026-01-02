@@ -1,90 +1,50 @@
-# ============================================
-# 项目根目录 .gitignore
-# ============================================
-
-# 操作系统文件
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
+# IDE
+.idea/
+*.iml
+.vscode/
 *.swp
 *.swo
 *~
 
-# IDE 和编辑器
-.idea/
-*.iml
-*.iws
-*.ipr
-.vscode/
-*.sublime-project
-*.sublime-workspace
-.project
-.classpath
-.settings/
-
-# 日志文件
-*.log
-logs/
-*.log.*
-
-# 临时文件
-*.tmp
-*.temp
-*.bak
-*.cache
-
-# 环境变量和配置文件（敏感信息）
-.env
-.env.local
-.env.*.local
-*.local
-application-local.properties
-application-prod.properties
-
-# 编译和构建产物
+# Maven
 target/
-build/
-dist/
-out/
-*.class
-*.jar
-*.war
-*.ear
-
-# 依赖目录
-node_modules/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
 .mvn/wrapper/maven-wrapper.jar
 
-# 测试覆盖率
-coverage/
-.nyc_output/
-*.lcov
-
-# 打包文件
+# Spring Boot
+*.log
+*.jar
+*.war
+*.nar
+*.ear
 *.zip
-*.tar
 *.tar.gz
 *.rar
 
-# 数据库文件
-*.db
-*.sqlite
-*.sqlite3
+# OS
+.DS_Store
+Thumbs.db
 
-# 文档生成
-docs/_build/
-site/
+# Java
+*.class
+*.ctxt
+.mtj.tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+.recommenders
 
-# 其他
-*.pid
-*.seed
-*.pid.lock
-
-# Spring Boot 敏感配置文件
-onlineClass_backend/src/main/resources/application.properties
-onlineClass_backend/src/main/resources/application-*.properties
-!onlineClass_backend/src/main/resources/application.properties.example
+# Application
+application-local.properties
+application-dev.properties
