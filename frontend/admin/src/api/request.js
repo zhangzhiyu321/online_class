@@ -24,16 +24,25 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   response => {
     const res = response.data
-    // 如果后端返回的 code 不是 200，则视为错误
-    if (res.code !== undefined && res.code !== 200) {
-      console.error('API Error:', res.message || 'Error')
-      return Promise.reject(new Error(res.message || 'Error'))
+    // 统一处理后端响应格式 {code, message, data}
+    if (res.code === 200) {
+      return res.data
+    } else if (res.code === 401) {
+      // 未登录，清除token并跳转登录页
+      localStorage.removeItem('token')
+      window.location.href = '/login'
+      return Promise.reject(new Error('未登录'))
+    } else {
+      // 其他错误
+      const message = res.message || '请求失败'
+      console.error('API Error:', message)
+      return Promise.reject(new Error(message))
     }
-    // 如果后端直接返回数据，则返回数据
-    return res.data !== undefined ? res.data : res
   },
   error => {
-    console.error('Request Error:', error.message || 'Request Error')
+    // 网络错误或服务器错误
+    const message = error.response?.data?.message || error.message || '网络错误'
+    console.error('Request Error:', message)
     return Promise.reject(error)
   }
 )
