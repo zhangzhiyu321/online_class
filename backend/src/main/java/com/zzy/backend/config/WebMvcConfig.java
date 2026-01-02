@@ -1,0 +1,59 @@
+package com.zzy.backend.config;
+
+import com.zzy.backend.interceptor.AuthInterceptor;
+import com.zzy.backend.interceptor.LogInterceptor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+/**
+ * Web MVC 配置类
+ */
+@Configuration
+public class WebMvcConfig implements WebMvcConfigurer {
+
+    @Autowired
+    private AuthInterceptor authInterceptor;
+    
+    @Autowired
+    private LogInterceptor logInterceptor;
+
+    /**
+     * 添加拦截器
+     */
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        // 日志拦截器 - 最先执行
+        registry.addInterceptor(logInterceptor)
+                .addPathPatterns("/**")
+                .order(1);
+        
+        // 认证拦截器
+        registry.addInterceptor(authInterceptor)
+                .addPathPatterns("/**")
+                .excludePathPatterns(
+                        "/api/auth/**",           // 认证相关接口
+                        "/api/common/**",         // 公共接口
+                        "/swagger-ui/**",         // Swagger UI
+                        "/v3/api-docs/**",        // Swagger API 文档
+                        "/doc.html",              // Knife4j 文档
+                        "/actuator/**",           // Actuator 监控
+                        "/error",                 // 错误页面
+                        "/favicon.ico"            // 图标
+                )
+                .order(2);
+    }
+
+    /**
+     * 静态资源处理
+     */
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        // 文件上传路径映射
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:./uploads/");
+    }
+}
+
