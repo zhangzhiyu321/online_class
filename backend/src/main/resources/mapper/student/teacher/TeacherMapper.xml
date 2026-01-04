@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzy.backend.mapper.student.teacher.TeacherMapper">
+
+    <!-- 教师列表结果映射 -->
+    <resultMap id="TeacherListItemResultMap" type="com.zzy.backend.dto.response.student.teacher.TeacherListItemResponse">
+        <id property="id" column="id"/>
+        <result property="nickname" column="nickname"/>
+        <result property="realName" column="real_name"/>
+        <result property="avatar" column="avatar"/>
+        <result property="rating" column="rating"/>
+        <result property="ratingCount" column="rating_count"/>
+        <result property="teachingYears" column="teaching_years"/>
+        <result property="certified" column="certified"/>
+        <result property="onlineStatus" column="online_status"/>
+        <result property="minPrice" column="min_price"/>
+    </resultMap>
+
+    <!-- 科目结果映射 -->
+    <resultMap id="SubjectResultMap" type="com.zzy.backend.dto.response.student.teacher.SubjectResponse">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+    </resultMap>
+
+    <!-- 查询教师列表 -->
+    <select id="selectTeacherList" resultMap="TeacherListItemResultMap">
+        SELECT
+            u.id,
+            u.nickname,
+            tp.real_name,
+            u.avatar,
+            COALESCE(tp.rating, 0) AS rating,
+            COALESCE(tp.rating_count, 0) AS rating_count,
+            COALESCE(tp.teaching_years, 0) AS teaching_years,
+            CASE WHEN cert_count.count > 0 THEN TRUE ELSE FALSE END AS certified,
+            u.online_status,
+            COALESCE(min_price.price, 0) AS min_price
+        FROM users u
+        LEFT JOIN teacher_profiles tp ON u.id = tp.user_id AND tp.deleted_at IS NULL
+        LEFT JOIN (
+            SELECT user_id, COUNT(*) AS count
+            FROM teacher_certifications
+            WHERE status = 2 AND deleted_at IS NULL
+            GROUP BY user_id
+        ) cert_count ON u.id = cert_count.user_id
+        LEFT JOIN (
+            SELECT user_id, MIN(price_per_hour) AS price
+            FROM teacher_teachings
+            WHERE status = 1 AND deleted_at IS NULL
+            GROUP BY user_id
+        ) min_price ON u.id = min_price.user_id
+        <where>
+            u.role = 2
+            AND u.status = 1
+            AND u.deleted_at IS NULL
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    u.nickname LIKE CONCAT('%', #{keyword}, '%')
+                    OR tp.real_name LIKE CONCAT('%', #{keyword}, '%')
+                    OR EXISTS (
+                        SELECT 1
+                        FROM teacher_teachings tt
+                        INNER JOIN subjects s ON tt.subject_id = s.id
+                        WHERE tt.user_id = u.id
+                        AND tt.status = 1
+                        AND tt.deleted_at IS NULL
+                        AND s.status = 1
+                        AND s.deleted_at IS NULL
+                        AND s.name LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                )
+            </if>
+            <if test="stageId != null">
+                AND EXISTS (
+                    SELECT 1
+                    FROM teacher_teachings tt
+                    WHERE tt.user_id = u.id
+                    AND tt.stage_id = #{stageId}
+                    AND tt.status = 1
+                    AND tt.deleted_at IS NULL
+                )
+            </if>
+            <if test="subjectId != null">
+                AND EXISTS (
+                    SELECT 1
+                    FROM teacher_teachings tt
+                    WHERE tt.user_id = u.id
+                    AND tt.subject_id = #{subjectId}
+                    AND tt.status = 1
+                    AND tt.deleted_at IS NULL
+                )
+            </if>
+            <if test="minRating != null">
+                AND COALESCE(tp.rating, 0) >= #{minRating}
+            </if>
+            <if test="minPrice != null">
+                AND EXISTS (
+                    SELECT 1
+                    FROM teacher_teachings tt
+                    WHERE tt.user_id = u.id
+                    AND tt.price_per_hour >= #{minPrice}
+                    AND tt.status = 1
+                    AND tt.deleted_at IS NULL
+                )
+            </if>
+            <if test="maxPrice != null">
+                AND EXISTS (
+                    SELECT 1
+                    FROM teacher_teachings tt
+                    WHERE tt.user_id = u.id
+                    AND tt.price_per_hour &lt;= #{maxPrice}
+                    AND tt.status = 1
+                    AND tt.deleted_at IS NULL
+                )
+            </if>
+        </where>
+        ORDER BY u.online_status DESC, tp.rating DESC, u.created_at DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 统计教师总数 -->
+    <select id="countTeacherList" resultType="java.lang.Long">
+        SELECT COUNT(DISTINCT u.id)
+        FROM users u
+        LEFT JOIN teacher_profiles tp ON u.id = tp.user_id AND tp.deleted_at IS NULL
+        <where>
+            u.role = 2
+            AND u.status = 1
+            AND u.deleted_at IS NULL
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    u.nickname LIKE CONCAT('%', #{keyword}, '%')
+                    OR tp.real_name LIKE CONCAT('%', #{keyword}, '%')
+                    OR EXISTS (
+                        SELECT 1
+                        FROM teacher_teachings tt
+                        INNER JOIN subjects s ON tt.subject_id = s.id
+                        WHERE tt.user_id = u.id
+                        AND tt.status = 1
+                        AND tt.deleted_at IS NULL
+                        AND s.status = 1
+                        AND s.deleted_at IS NULL
+                        AND s.name LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                )
+            </if>
+            <if test="stageId != null">
+                AND EXISTS (
+                    SELECT 1
+                    FROM teacher_teachings tt
+                    WHERE tt.user_id = u.id
+                    AND tt.stage_id = #{stageId}
+                    AND tt.status = 1
+                    AND tt.deleted_at IS NULL
+                )
+            </if>
+            <if test="subjectId != null">
+                AND EXISTS (
+                    SELECT 1
+                    FROM teacher_teachings tt
+                    WHERE tt.user_id = u.id
+                    AND tt.subject_id = #{subjectId}
+                    AND tt.status = 1
+                    AND tt.deleted_at IS NULL
+                )
+            </if>
+            <if test="minRating != null">
+                AND COALESCE(tp.rating, 0) >= #{minRating}
+            </if>
+            <if test="minPrice != null">
+                AND EXISTS (
+                    SELECT 1
+                    FROM teacher_teachings tt
+                    WHERE tt.user_id = u.id
+                    AND tt.price_per_hour >= #{minPrice}
+                    AND tt.status = 1
+                    AND tt.deleted_at IS NULL
+                )
+            </if>
+            <if test="maxPrice != null">
+                AND EXISTS (
+                    SELECT 1
+                    FROM teacher_teachings tt
+                    WHERE tt.user_id = u.id
+                    AND tt.price_per_hour &lt;= #{maxPrice}
+                    AND tt.status = 1
+                    AND tt.deleted_at IS NULL
+                )
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询教师的科目列表 -->
+    <select id="selectTeacherSubjects" resultMap="SubjectResultMap">
+        SELECT DISTINCT s.id, s.name, s.sort_order
+        FROM teacher_teachings tt
+        INNER JOIN subjects s ON tt.subject_id = s.id
+        WHERE tt.user_id = #{userId}
+        AND tt.status = 1
+        AND tt.deleted_at IS NULL
+        AND s.status = 1
+        AND s.deleted_at IS NULL
+        ORDER BY s.sort_order, s.id
+    </select>
+
+    <!-- 查询教师的最低价格 -->
+    <select id="selectTeacherMinPrice" resultType="java.math.BigDecimal">
+        SELECT MIN(price_per_hour)
+        FROM teacher_teachings
+        WHERE user_id = #{userId}
+        AND status = 1
+        AND deleted_at IS NULL
+    </select>
+
+    <!-- 查询教师是否已认证 -->
+    <select id="countCertifiedTeacher" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM teacher_certifications
+        WHERE user_id = #{userId}
+        AND status = 2
+        AND deleted_at IS NULL
+    </select>
+
+</mapper>
+
