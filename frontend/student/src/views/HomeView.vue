@@ -145,16 +145,16 @@ const goToPage = (path) => {
 }
 
 .welcome-title {
-  font-size: 42px;
+  font-size: var(--font-size-h1, 42px);
   font-weight: 600;
   color: #1a1a1a;
-  margin-bottom: 12px;
+  margin-bottom: var(--spacing-md, 12px);
   letter-spacing: -0.5px;
   line-height: 1.2;
 }
 
 .welcome-subtitle {
-  font-size: 18px;
+  font-size: var(--font-size-h5, 18px);
   color: #6b7280;
   font-weight: 400;
   margin: 0;
@@ -228,7 +228,7 @@ const goToPage = (path) => {
 }
 
 .page-title {
-  font-size: 18px;
+  font-size: var(--font-size-h5, 18px);
   font-weight: 600;
   color: #1a1a1a;
   margin: 0 0 6px 0;
@@ -236,7 +236,7 @@ const goToPage = (path) => {
 }
 
 .page-description {
-  font-size: 14px;
+  font-size: var(--font-size-body-small, 14px);
   color: #6b7280;
   margin: 0;
   line-height: 1.5;
@@ -311,11 +311,11 @@ const goToPage = (path) => {
   }
 
   .welcome-title {
-    font-size: 28px;
+    font-size: var(--font-size-h2, 28px);
   }
 
   .welcome-subtitle {
-    font-size: 16px;
+    font-size: var(--font-size-h6, 16px);
   }
 
   .page-links {
@@ -335,11 +335,11 @@ const goToPage = (path) => {
   }
 
   .page-title {
-    font-size: 16px;
+    font-size: var(--font-size-h6, 16px);
   }
 
   .page-description {
-    font-size: 13px;
+    font-size: var(--font-size-body-small, 13px);
   }
 }
 

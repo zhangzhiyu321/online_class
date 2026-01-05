@@ -18,10 +18,6 @@
             <el-icon :size="24"><HomeFilled /></el-icon>
             <span class="home-text">首页</span>
           </div>
-          <div class="logo">
-            <el-icon><School /></el-icon>
-            <span class="logo-text">线上家教</span>
-          </div>
         </div>
         <div class="header-right">
           <el-menu
@@ -151,7 +147,6 @@ import { ref, computed, onMounted, onUnmounted, reactive, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import {
-  School,
   User,
   Calendar,
   Money,
@@ -539,9 +534,9 @@ onUnmounted(() => {
 }
 
 .header-content {
-  max-width: 1200px;
+  max-width: var(--container-max-width-desktop, 1200px);
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 var(--spacing-lg, 20px);
   height: 100%;
   display: flex;
   align-items: center;
@@ -556,10 +551,10 @@ onUnmounted(() => {
 
 /* home-button 特定样式（覆盖通用样式） */
 .home-button {
-  font-size: 16px;
+  font-size: var(--font-size-body, 16px);
   font-weight: 500;
   border-radius: 16px;
-  height: 44px;
+  height: var(--button-height, 44px);
   padding: 6px 12px;
 }
 
@@ -569,27 +564,9 @@ onUnmounted(() => {
 
 .home-text {
   display: none;
+  font-size: var(--font-size-body-small, 14px);
 }
 
-.logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 20px;
-  font-weight: 600;
-  color: #1a1a1a;
-  padding: 8px 12px;
-  border-radius: 12px;
-  background: #f9fafb;
-}
-
-.logo .el-icon {
-  color: #6b7280;
-}
-
-.logo-text {
-  display: none;
-}
 
 .header-right {
   display: flex;
@@ -611,6 +588,7 @@ onUnmounted(() => {
   background: #f9fafb;
   will-change: transform;
   transform: translateZ(0);
+  font-size: var(--font-size-body-small, 14px);
 }
 
 .header-menu .el-menu-item:hover {
@@ -644,8 +622,8 @@ onUnmounted(() => {
 
 .main-content {
   flex: 1;
-  padding: 32px 24px;
-  max-width: 1200px;
+  padding: var(--spacing-2xl, 32px) var(--spacing-lg, 24px);
+  max-width: var(--container-max-width-desktop, 1200px);
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;
@@ -764,8 +742,9 @@ onUnmounted(() => {
 }
 
 .nav-item span {
-  font-size: 12px;
+  font-size: var(--font-size-small, 12px);
   transition: color 0.2s ease;
+  font-weight: 500;
 }
 
 
@@ -775,18 +754,21 @@ onUnmounted(() => {
   right: 8px;
 }
 
-/* 响应式设计 */
-@media (min-width: 768px) {
-  .logo-text {
-    display: inline;
+/* 响应式设计 - 平板端 */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .header-content {
+    padding: 0 var(--spacing-md, 16px);
+    max-width: var(--container-max-width-tablet, 700px);
   }
 
   .home-text {
     display: inline;
+    font-size: var(--font-size-body-small, 14px);
   }
 
   .username {
     display: inline;
+    font-size: var(--font-size-body-small, 14px);
   }
 
   .mobile-bottom-nav {
@@ -794,18 +776,93 @@ onUnmounted(() => {
   }
 
   .main-content {
-    padding-bottom: 20px;
+    padding: var(--spacing-xl, 24px) var(--spacing-md, 16px);
+    padding-bottom: var(--spacing-lg, 20px);
+    max-width: var(--container-max-width-tablet, 700px);
+  }
+
+  .header {
+    height: 60px;
+  }
+
+  .home-button {
+    height: var(--button-height, 40px);
+    font-size: var(--font-size-body-small, 14px);
+  }
+
+  .user-info {
+    height: var(--button-height, 40px);
+    font-size: var(--font-size-body-small, 14px);
   }
 }
 
-@media (max-width: 767px) {
-  .header-menu {
+/* 响应式设计 - 电脑端 */
+@media (min-width: 1025px) {
+  .home-text {
+    display: inline;
+    font-size: var(--font-size-body, 16px);
+  }
+
+  .username {
+    display: inline;
+    font-size: var(--font-size-body, 16px);
+  }
+
+  .mobile-bottom-nav {
     display: none;
   }
 
   .main-content {
-    padding: 16px;
+    padding-bottom: var(--spacing-lg, 20px);
+  }
+}
+
+/* 响应式设计 - 手机端 */
+@media (max-width: 767px) {
+  .header {
+    height: 56px;
+  }
+
+  .header-content {
+    padding: 0 var(--spacing-md, 12px);
+  }
+
+  .header-menu {
+    display: none;
+  }
+
+  .home-button {
+    height: var(--button-height, 44px);
+    padding: 6px 10px;
+    font-size: var(--font-size-body-small, 14px);
+  }
+
+  .user-info {
+    height: var(--button-height, 44px);
+    padding: 6px 10px;
+    font-size: var(--font-size-body-small, 14px);
+  }
+
+  .main-content {
+    padding: var(--spacing-md, 16px);
     padding-bottom: 70px; /* 为底部导航留出空间 */
+  }
+
+  .mobile-bottom-nav {
+    padding: var(--spacing-sm, 8px) 0 calc(var(--spacing-sm, 8px) + env(safe-area-inset-bottom));
+  }
+
+  .nav-item {
+    padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+    gap: var(--spacing-xs, 4px);
+  }
+
+  .nav-item span {
+    font-size: var(--font-size-xs, 11px);
+  }
+
+  .nav-item .nav-icon {
+    font-size: 22px !important;
   }
 }
 
@@ -866,14 +923,14 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px;
+  padding: var(--spacing-lg, 20px) var(--spacing-lg, 24px);
   border-bottom: 1px solid #e5e7eb;
   background: #ffffff;
   flex-shrink: 0;
 }
 
 .drawer-title {
-  font-size: 20px;
+  font-size: var(--font-size-h4, 20px);
   font-weight: 600;
   color: #1a1a1a;
   margin: 0;
@@ -910,14 +967,50 @@ onUnmounted(() => {
   pointer-events: none;
 }
 
-/* 响应式调整 */
+/* 响应式调整 - 手机端 */
 @media (max-width: 767px) {
   .home-drawer {
     width: 85vw;
+    max-width: 360px;
+  }
+
+  .drawer-header {
+    padding: var(--spacing-md, 16px) var(--spacing-md, 16px);
+  }
+
+  .drawer-title {
+    font-size: var(--font-size-h5, 18px);
+  }
+
+  .drawer-close {
+    font-size: 20px;
   }
 
   .drawer-content :deep(.home-view) {
-    padding: 16px;
+    padding: var(--spacing-md, 16px);
+  }
+}
+
+/* 响应式调整 - 平板端 */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .home-drawer {
+    width: 400px;
+    max-width: 80vw;
+  }
+
+  .drawer-header {
+    padding: var(--spacing-lg, 20px) var(--spacing-lg, 20px);
+  }
+
+  .drawer-content :deep(.home-view) {
+    padding: var(--spacing-lg, 20px);
+  }
+}
+
+/* 响应式调整 - 电脑端 */
+@media (min-width: 1025px) {
+  .home-drawer {
+    width: 420px;
   }
 }
 

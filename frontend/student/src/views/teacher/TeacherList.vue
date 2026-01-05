@@ -598,18 +598,18 @@ onUnmounted(() => {
  * 限制最大宽度，居中显示
  */
 .teacher-list {
-  max-width: 1200px;
+  max-width: var(--container-max-width-desktop, 1200px);
   margin: 0 auto;
 }
 
 /* 页面标题区域 */
 .page-header {
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-lg, 20px);
 }
 
 /* 页面标题文字样式 */
 .page-title {
-  font-size: 24px;
+  font-size: var(--font-size-h2, 24px);
   font-weight: bold;
   color: #303133;
 }
@@ -618,19 +618,19 @@ onUnmounted(() => {
 
 /* 筛选栏容器 */
 .filter-bar {
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-lg, 20px);
 }
 
 /* 筛选卡片容器 */
 .filter-card {
-  margin-bottom: 20px;
+  margin-bottom: var(--spacing-lg, 20px);
 }
 
 /* 筛选内容容器（垂直布局） */
 .filter-content {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: var(--spacing-md, 16px);
 }
 
 /* 搜索框容器（水平布局，输入框和按钮并排显示） */
@@ -663,6 +663,7 @@ onUnmounted(() => {
   flex-wrap: nowrap; /* 防止换行，保持在同一行 */
   gap: 12px;
   align-items: center;
+  overflow: hidden; /* 防止出现滚动条 */
 }
 
 /* 筛选下拉框触发器样式（覆盖 main.css 中的通用样式）
@@ -684,8 +685,8 @@ onUnmounted(() => {
 .teacher-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: var(--spacing-lg, 20px);
+  margin-bottom: var(--spacing-lg, 20px);
 }
 
 /* 教师卡片样式（可点击，悬停时有上浮效果） */
@@ -721,9 +722,9 @@ onUnmounted(() => {
 
 /* 教师姓名样式 */
 .teacher-name {
-  font-size: 18px;
+  font-size: var(--font-size-h5, 18px);
   font-weight: bold;
-  margin-bottom: 8px;
+  margin-bottom: var(--spacing-sm, 8px);
   color: #303133;
 }
 
@@ -738,7 +739,7 @@ onUnmounted(() => {
 
 /* 评价数量文字样式 */
 .rating-text {
-  font-size: 12px;
+  font-size: var(--font-size-small, 12px);
   color: #909399;
 }
 
@@ -753,7 +754,7 @@ onUnmounted(() => {
 
 /* 教学年限文字样式 */
 .teaching-years {
-  font-size: 12px;
+  font-size: var(--font-size-small, 12px);
   color: #909399;
 }
 
@@ -786,24 +787,24 @@ onUnmounted(() => {
 
 /* 价格数值样式（大号红色粗体） */
 .price-value {
-  font-size: 18px;
+  font-size: var(--font-size-h5, 18px);
   font-weight: bold;
   color: #f56c6c;
-  margin-left: 4px;
+  margin-left: var(--spacing-xs, 4px);
 }
 
 /* 加载更多提示容器（居中） */
 .load-more {
   text-align: center;
-  margin-top: 20px;
-  margin-bottom: 20px;
-  padding: 20px 0;
+  margin-top: var(--spacing-lg, 20px);
+  margin-bottom: var(--spacing-lg, 20px);
+  padding: var(--spacing-lg, 20px) 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: var(--spacing-sm, 8px);
   color: #909399;
-  font-size: 14px;
+  font-size: var(--font-size-body-small, 14px);
 }
 
 /* 加载图标动画 */
@@ -823,43 +824,65 @@ onUnmounted(() => {
 /* 没有更多文本样式 */
 .no-more-text {
   color: #c0c4cc;
-  font-size: 14px;
+  font-size: var(--font-size-body-small, 14px);
 }
 
 /* ========== 响应式设计 ========== */
 
 /* 移动端样式（屏幕宽度 <= 767px） */
 @media (max-width: 767px) {
-  /* 移动端教师网格：单列布局 */
-  .teacher-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+  .teacher-list {
+    max-width: 100%;
+  }
+
+  /* 移动端页面标题：缩小字体 */
+  .page-header {
+    margin-bottom: var(--spacing-md, 16px);
+  }
+
+  .page-title {
+    font-size: var(--font-size-h3, 20px);
+  }
+
+  /* 移动端筛选栏 */
+  .filter-bar {
+    margin-bottom: var(--spacing-md, 16px);
+  }
+
+  .filter-content {
+    gap: var(--spacing-sm, 12px);
   }
 
   /* 移动端搜索框：保持水平布局，搜索按钮靠右对齐 */
   .search-box {
     flex-direction: row;
     justify-content: space-between;
+    gap: var(--spacing-sm, 8px);
   }
 
   /* 移动端搜索按钮：自动靠右 */
   .search-button {
     margin-left: auto;
+    font-size: var(--font-size-button, 14px);
+    height: var(--button-height, 44px);
   }
 
   /* 移动端筛选选项：水平滚动，不换行 */
   .filter-options {
     flex-direction: row;
     flex-wrap: nowrap;
-    gap: 8px;
+    gap: var(--spacing-sm, 8px);
     align-items: center;
     overflow-x: auto; /* 允许横向滚动 */
+    -webkit-overflow-scrolling: touch;
   }
 
   /* 移动端筛选下拉框：缩小最小宽度，防止压缩 */
   .filter-dropdown-trigger {
     min-width: 100px;
     flex-shrink: 0;
+    font-size: var(--font-size-body-small, 13px);
+    height: var(--input-height, 44px);
   }
 
   /* 移动端重置按钮：防止压缩，文字不换行，自动靠右 */
@@ -867,19 +890,56 @@ onUnmounted(() => {
     flex-shrink: 0;
     white-space: nowrap;
     margin-left: auto;
+    font-size: var(--font-size-button, 14px);
+    height: var(--button-height, 44px);
   }
 
-  /* 移动端页面标题：缩小字体 */
-  .page-title {
-    font-size: 20px;
+  /* 移动端教师网格：单列布局 */
+  .teacher-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-md, 16px);
+  }
+
+  /* 移动端教师卡片 */
+  .teacher-name {
+    font-size: var(--font-size-h6, 16px);
+  }
+
+  .price-value {
+    font-size: var(--font-size-h6, 16px);
   }
 }
 
 /* 平板样式（屏幕宽度 768px ~ 1024px） */
 @media (min-width: 768px) and (max-width: 1024px) {
+  .teacher-list {
+    max-width: var(--container-max-width-tablet, 700px);
+  }
+
+  .page-title {
+    font-size: var(--font-size-h2, 24px);
+  }
+
   /* 平板端教师网格：双列布局 */
   .teacher-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-lg, 20px);
+  }
+
+  .filter-content {
+    gap: var(--spacing-md, 16px);
+  }
+
+  .filter-dropdown-trigger {
+    font-size: var(--font-size-body-small, 14px);
+  }
+}
+
+/* 电脑端样式（屏幕宽度 >= 1025px） */
+@media (min-width: 1025px) {
+  .teacher-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: var(--spacing-xl, 24px);
   }
 }
 </style>
