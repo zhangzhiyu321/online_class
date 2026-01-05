@@ -2,8 +2,7 @@ package com.zzy.backend.service.student.teacher.impl;
 
 import com.zzy.backend.common.page.PageResult;
 import com.zzy.backend.dto.request.student.teacher.TeacherListRequest;
-import com.zzy.backend.dto.response.student.teacher.SubjectResponse;
-import com.zzy.backend.dto.response.student.teacher.TeacherListItemResponse;
+import com.zzy.backend.dto.response.student.teacher.*;
 import com.zzy.backend.mapper.student.teacher.TeacherMapper;
 import com.zzy.backend.service.student.teacher.TeacherService;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +41,31 @@ public class TeacherServiceImpl implements TeacherService {
 
         // 构建分页结果
         return PageResult.of(teacherList, total, request.getPage(), request.getPageSize());
+    }
+
+    @Override
+    public TeacherDetailResponse getTeacherDetail(Long userId) {
+        log.info("查询教师详情, userId: {}", userId);
+
+        // 查询教师基本信息
+        TeacherDetailResponse detail = teacherMapper.selectTeacherDetail(userId);
+        if (detail == null) {
+            return null;
+        }
+
+        // 查询教学阶段列表
+        List<StageResponse> stages = teacherMapper.selectTeacherStages(userId);
+        detail.setStages(stages);
+
+        // 查询教学信息列表
+        List<TeachingResponse> teachings = teacherMapper.selectTeacherTeachings(userId);
+        detail.setTeachings(teachings);
+
+        // 查询时间表列表
+        List<ScheduleResponse> schedules = teacherMapper.selectTeacherSchedules(userId);
+        detail.setSchedules(schedules);
+
+        return detail;
     }
 }
 

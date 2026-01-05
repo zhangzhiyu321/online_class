@@ -2,6 +2,7 @@ package com.zzy.backend.service.student.teacher;
 
 import com.zzy.backend.common.page.PageResult;
 import com.zzy.backend.dto.request.student.teacher.TeacherListRequest;
+import com.zzy.backend.dto.response.student.teacher.TeacherDetailResponse;
 import com.zzy.backend.dto.response.student.teacher.TeacherListItemResponse;
 
 /**
@@ -16,5 +17,13 @@ public interface TeacherService {
      * @return 分页结果
      */
     PageResult<TeacherListItemResponse> getTeacherList(TeacherListRequest request);
+
+    /**
+     * 根据教师ID查询详细信息
+     *
+     * @param userId 教师用户ID
+     * @return 教师详情
+     */
+    TeacherDetailResponse getTeacherDetail(Long userId);
 }
 
