@@ -22,6 +22,132 @@
         <result property="name" column="name"/>
     </resultMap>
 
+    <!-- ========== 公共 SQL 片段 ========== -->
+
+    <!-- 基础用户条件：教师角色、启用状态、未删除 -->
+    <sql id="baseUserCondition">
+        u.role = 2
+        AND u.status = 1
+        AND u.deleted_at IS NULL
+    </sql>
+
+    <!-- 有效的教师教学条件：启用状态、未删除 -->
+    <sql id="validTeachingCondition">
+        tt.status = 1
+        AND tt.deleted_at IS NULL
+    </sql>
+
+    <!-- 认证数量子查询 -->
+    <sql id="certCountSubquery">
+        (
+            SELECT user_id, COUNT(*) AS count
+            FROM teacher_certifications
+            WHERE status = 2 AND deleted_at IS NULL
+            GROUP BY user_id
+        ) cert_count
+    </sql>
+
+    <!-- 最低价格子查询 -->
+    <sql id="minPriceSubquery">
+        (
+            SELECT user_id, MIN(price_per_hour) AS price
+            FROM teacher_teachings
+            WHERE status = 1 AND deleted_at IS NULL
+            GROUP BY user_id
+        ) min_price
+    </sql>
+
+    <!-- 关键词搜索条件 -->
+    <sql id="keywordCondition">
+        <if test="keyword != null and keyword != ''">
+            AND (
+                u.nickname LIKE CONCAT('%', #{keyword}, '%')
+                OR tp.real_name LIKE CONCAT('%', #{keyword}, '%')
+                OR EXISTS (
+                    SELECT 1
+                    FROM teacher_teachings tt
+                    INNER JOIN subjects s ON tt.subject_id = s.id
+                    WHERE tt.user_id = u.id
+                    AND <include refid="validTeachingCondition"/>
+                    AND s.status = 1
+                    AND s.deleted_at IS NULL
+                    AND s.name LIKE CONCAT('%', #{keyword}, '%')
+                )
+            )
+        </if>
+    </sql>
+
+    <!-- 阶段ID过滤条件 -->
+    <sql id="stageIdCondition">
+        <if test="stageId != null">
+            AND EXISTS (
+                SELECT 1
+                FROM teacher_teachings tt
+                WHERE tt.user_id = u.id
+                AND tt.stage_id = #{stageId}
+                AND <include refid="validTeachingCondition"/>
+            )
+        </if>
+    </sql>
+
+    <!-- 科目ID过滤条件 -->
+    <sql id="subjectIdCondition">
+        <if test="subjectId != null">
+            AND EXISTS (
+                SELECT 1
+                FROM teacher_teachings tt
+                WHERE tt.user_id = u.id
+                AND tt.subject_id = #{subjectId}
+                AND <include refid="validTeachingCondition"/>
+            )
+        </if>
+    </sql>
+
+    <!-- 最低评分过滤条件 -->
+    <sql id="minRatingCondition">
+        <if test="minRating != null">
+            AND COALESCE(tp.rating, 0) >= #{minRating}
+        </if>
+    </sql>
+
+    <!-- 最低价格过滤条件 -->
+    <sql id="minPriceCondition">
+        <if test="minPrice != null">
+            AND EXISTS (
+                SELECT 1
+                FROM teacher_teachings tt
+                WHERE tt.user_id = u.id
+                AND tt.price_per_hour >= #{minPrice}
+                AND <include refid="validTeachingCondition"/>
+            )
+        </if>
+    </sql>
+
+    <!-- 最高价格过滤条件 -->
+    <sql id="maxPriceCondition">
+        <if test="maxPrice != null">
+            AND EXISTS (
+                SELECT 1
+                FROM teacher_teachings tt
+                WHERE tt.user_id = u.id
+                AND tt.price_per_hour &lt;= #{maxPrice}
+                AND <include refid="validTeachingCondition"/>
+            )
+        </if>
+    </sql>
+
+    <!-- 所有过滤条件组合 -->
+    <sql id="allFilterConditions">
+        <include refid="keywordCondition"/>
+        <include refid="stageIdCondition"/>
+        <include refid="subjectIdCondition"/>
+        <include refid="minRatingCondition"/>
+        <include refid="minPriceCondition"/>
+        <include refid="maxPriceCondition"/>
+    </sql>
+
+    <!-- ========== 查询方法 ========== -->
+
     <!-- 查询教师列表 -->
     <select id="selectTeacherList" resultMap="TeacherListItemResultMap">
         SELECT
@@ -37,82 +163,11 @@
             COALESCE(min_price.price, 0) AS min_price
         FROM users u
         LEFT JOIN teacher_profiles tp ON u.id = tp.user_id AND tp.deleted_at IS NULL
-        LEFT JOIN (
-            SELECT user_id, COUNT(*) AS count
-            FROM teacher_certifications
-            WHERE status = 2 AND deleted_at IS NULL
-            GROUP BY user_id
-        ) cert_count ON u.id = cert_count.user_id
-        LEFT JOIN (
-            SELECT user_id, MIN(price_per_hour) AS price
-            FROM teacher_teachings
-            WHERE status = 1 AND deleted_at IS NULL
-            GROUP BY user_id
-        ) min_price ON u.id = min_price.user_id
+        LEFT JOIN <include refid="certCountSubquery"/> ON u.id = cert_count.user_id
+        LEFT JOIN <include refid="minPriceSubquery"/> ON u.id = min_price.user_id
         <where>
-            u.role = 2
-            AND u.status = 1
-            AND u.deleted_at IS NULL
-            <if test="keyword != null and keyword != ''">
-                AND (
-                    u.nickname LIKE CONCAT('%', #{keyword}, '%')
-                    OR tp.real_name LIKE CONCAT('%', #{keyword}, '%')
-                    OR EXISTS (
-                        SELECT 1
-                        FROM teacher_teachings tt
-                        INNER JOIN subjects s ON tt.subject_id = s.id
-                        WHERE tt.user_id = u.id
-                        AND tt.status = 1
-                        AND tt.deleted_at IS NULL
-                        AND s.status = 1
-                        AND s.deleted_at IS NULL
-                        AND s.name LIKE CONCAT('%', #{keyword}, '%')
-                    )
-                )
-            </if>
-            <if test="stageId != null">
-                AND EXISTS (
-                    SELECT 1
-                    FROM teacher_teachings tt
-                    WHERE tt.user_id = u.id
-                    AND tt.stage_id = #{stageId}
-                    AND tt.status = 1
-                    AND tt.deleted_at IS NULL
-                )
-            </if>
-            <if test="subjectId != null">
-                AND EXISTS (
-                    SELECT 1
-                    FROM teacher_teachings tt
-                    WHERE tt.user_id = u.id
-                    AND tt.subject_id = #{subjectId}
-                    AND tt.status = 1
-                    AND tt.deleted_at IS NULL
-                )
-            </if>
-            <if test="minRating != null">
-                AND COALESCE(tp.rating, 0) >= #{minRating}
-            </if>
-            <if test="minPrice != null">
-                AND EXISTS (
-                    SELECT 1
-                    FROM teacher_teachings tt
-                    WHERE tt.user_id = u.id
-                    AND tt.price_per_hour >= #{minPrice}
-                    AND tt.status = 1
-                    AND tt.deleted_at IS NULL
-                )
-            </if>
-            <if test="maxPrice != null">
-                AND EXISTS (
-                    SELECT 1
-                    FROM teacher_teachings tt
-                    WHERE tt.user_id = u.id
-                    AND tt.price_per_hour &lt;= #{maxPrice}
-                    AND tt.status = 1
-                    AND tt.deleted_at IS NULL
-                )
-            </if>
+            <include refid="baseUserCondition"/>
+            <include refid="allFilterConditions"/>
         </where>
         ORDER BY u.online_status DESC, tp.rating DESC, u.created_at DESC
         LIMIT #{offset}, #{pageSize}
@@ -124,69 +179,8 @@
         FROM users u
         LEFT JOIN teacher_profiles tp ON u.id = tp.user_id AND tp.deleted_at IS NULL
         <where>
-            u.role = 2
-            AND u.status = 1
-            AND u.deleted_at IS NULL
-            <if test="keyword != null and keyword != ''">
-                AND (
-                    u.nickname LIKE CONCAT('%', #{keyword}, '%')
-                    OR tp.real_name LIKE CONCAT('%', #{keyword}, '%')
-                    OR EXISTS (
-                        SELECT 1
-                        FROM teacher_teachings tt
-                        INNER JOIN subjects s ON tt.subject_id = s.id
-                        WHERE tt.user_id = u.id
-                        AND tt.status = 1
-                        AND tt.deleted_at IS NULL
-                        AND s.status = 1
-                        AND s.deleted_at IS NULL
-                        AND s.name LIKE CONCAT('%', #{keyword}, '%')
-                    )
-                )
-            </if>
-            <if test="stageId != null">
-                AND EXISTS (
-                    SELECT 1
-                    FROM teacher_teachings tt
-                    WHERE tt.user_id = u.id
-                    AND tt.stage_id = #{stageId}
-                    AND tt.status = 1
-                    AND tt.deleted_at IS NULL
-                )
-            </if>
-            <if test="subjectId != null">
-                AND EXISTS (
-                    SELECT 1
-                    FROM teacher_teachings tt
-                    WHERE tt.user_id = u.id
-                    AND tt.subject_id = #{subjectId}
-                    AND tt.status = 1
-                    AND tt.deleted_at IS NULL
-                )
-            </if>
-            <if test="minRating != null">
-                AND COALESCE(tp.rating, 0) >= #{minRating}
-            </if>
-            <if test="minPrice != null">
-                AND EXISTS (
-                    SELECT 1
-                    FROM teacher_teachings tt
-                    WHERE tt.user_id = u.id
-                    AND tt.price_per_hour >= #{minPrice}
-                    AND tt.status = 1
-                    AND tt.deleted_at IS NULL
-                )
-            </if>
-            <if test="maxPrice != null">
-                AND EXISTS (
-                    SELECT 1
-                    FROM teacher_teachings tt
-                    WHERE tt.user_id = u.id
-                    AND tt.price_per_hour &lt;= #{maxPrice}
-                    AND tt.status = 1
-                    AND tt.deleted_at IS NULL
-                )
-            </if>
+            <include refid="baseUserCondition"/>
+            <include refid="allFilterConditions"/>
         </where>
     </select>
 

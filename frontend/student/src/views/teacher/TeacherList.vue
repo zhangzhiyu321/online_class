@@ -200,9 +200,13 @@
     <!-- 空状态 -->
     <el-empty v-if="!loading && (!teacherList || teacherList.length === 0)" description="暂无教师" />
 
-    <!-- 加载更多 -->
-    <div v-if="hasMore" class="load-more">
-      <el-button :loading="loading" @click="loadMore">加载更多</el-button>
+    <!-- 加载更多提示 -->
+    <div v-if="hasMore && loading" class="load-more">
+      <el-icon class="loading-icon"><Loading /></el-icon>
+      <span>正在加载更多...</span>
+    </div>
+    <div v-else-if="!hasMore && teacherList.length > 0" class="load-more">
+      <span class="no-more-text">没有更多了</span>
     </div>
   </div>
 </template>
@@ -213,11 +217,11 @@
  * 使用 Composition API 实现组件逻辑
  */
 
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { getTeacherList } from '@/api/teacher'
 import { getTeachingStages, getSubjects } from '@/api/common'
-import { Search, User, ArrowDown, Close } from '@element-plus/icons-vue'
+import { Search, User, ArrowDown, Close, Loading } from '@element-plus/icons-vue'
 
 // ========== 路由和基础设置 ==========
 const router = useRouter() // Vue Router 实例，用于页面跳转
@@ -261,7 +265,7 @@ const filters = ref({
 // pageSize: 每页显示数量
 const pagination = ref({
   page: 1,
-  pageSize: 12
+  pageSize: 6
 })
 
 // 下拉框打开状态管理（用于控制下拉框激活样式）
@@ -522,11 +526,37 @@ const resetFilter = () => {
 
 /**
  * 加载更多数据
- * 点击"加载更多"按钮时触发，加载下一页数据并追加到列表
+ * 自动触发，加载下一页数据并追加到列表
  */
 const loadMore = () => {
+  // 如果正在加载或没有更多数据，直接返回
+  if (loading.value || !hasMore.value) return
+  
   pagination.value.page++
   loadTeacherList(false) // 追加模式，不清空现有数据
+}
+
+/**
+ * 处理滚动事件
+ * 当滚动接近底部时自动加载更多数据
+ * 使用节流优化性能，提前200px开始加载，避免顿挫感
+ */
+const handleScroll = () => {
+  // 如果正在加载或没有更多数据，直接返回
+  if (loading.value || !hasMore.value) return
+
+  // 获取滚动相关信息
+  const scrollTop = window.pageYOffset || document.documentElement.scrollTop || document.body.scrollTop
+  const windowHeight = window.innerHeight || document.documentElement.clientHeight
+  const documentHeight = document.documentElement.scrollHeight || document.body.scrollHeight
+
+  // 计算距离底部的距离
+  const distanceToBottom = documentHeight - (scrollTop + windowHeight)
+
+  // 当距离底部小于200px时，开始加载更多（提前加载，避免顿挫感）
+  if (distanceToBottom < 200) {
+    loadMore()
+  }
 }
 
 /**
@@ -542,11 +572,22 @@ const goToDetail = (id) => {
 /**
  * 组件挂载时执行
  * 初始化加载教学阶段、科目和教师列表数据
+ * 添加滚动事件监听，实现自动加载更多
  */
 onMounted(() => {
   loadTeachingStages()
   loadSubjects()
   loadTeacherList(true)
+  // 添加滚动事件监听，使用 passive 选项优化性能
+  window.addEventListener('scroll', handleScroll, { passive: true })
+})
+
+/**
+ * 组件卸载时执行
+ * 移除滚动事件监听器，避免内存泄漏
+ */
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll)
 })
 </script>
 
@@ -751,10 +792,38 @@ onMounted(() => {
   margin-left: 4px;
 }
 
-/* 加载更多按钮容器（居中） */
+/* 加载更多提示容器（居中） */
 .load-more {
   text-align: center;
   margin-top: 20px;
+  margin-bottom: 20px;
+  padding: 20px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #909399;
+  font-size: 14px;
+}
+
+/* 加载图标动画 */
+.loading-icon {
+  animation: rotate 1s linear infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 没有更多文本样式 */
+.no-more-text {
+  color: #c0c4cc;
+  font-size: 14px;
 }
 
 /* ========== 响应式设计 ========== */
