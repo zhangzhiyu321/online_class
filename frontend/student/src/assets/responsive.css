@@ -1,0 +1,239 @@
+/**
+ * 响应式样式变量文件
+ * 定义三端字体、间距、组件尺寸变量
+ */
+
+/* ========== 响应式断点 ========== */
+:root {
+  --breakpoint-mobile: 767px;
+  --breakpoint-tablet: 1024px;
+  --breakpoint-desktop: 1025px;
+}
+
+/* ========== 响应式字体大小系统（使用clamp实现流式字体） ========== */
+
+/* 标题字体 */
+:root {
+  --font-size-h1: clamp(24px, 5vw, 42px);
+  --font-size-h2: clamp(20px, 4vw, 32px);
+  --font-size-h3: clamp(18px, 3.5vw, 24px);
+  --font-size-h4: clamp(16px, 3vw, 20px);
+  --font-size-h5: clamp(15px, 2.5vw, 18px);
+  --font-size-h6: clamp(14px, 2vw, 16px);
+}
+
+/* 正文字体 */
+:root {
+  --font-size-body: clamp(14px, 2vw, 16px);
+  --font-size-body-large: clamp(16px, 2.5vw, 18px);
+  --font-size-body-small: clamp(13px, 1.8vw, 15px);
+}
+
+/* 小字体 */
+:root {
+  --font-size-small: clamp(12px, 1.5vw, 14px);
+  --font-size-xs: clamp(11px, 1.2vw, 12px);
+  --font-size-xxs: clamp(10px, 1vw, 11px);
+}
+
+/* 按钮字体 */
+:root {
+  --font-size-button-large: clamp(16px, 2vw, 18px);
+  --font-size-button: clamp(14px, 1.8vw, 16px);
+  --font-size-button-small: clamp(12px, 1.5vw, 14px);
+}
+
+/* ========== 响应式间距系统 ========== */
+
+/* 基础间距单位 */
+:root {
+  --spacing-unit: 4px;
+}
+
+/* 手机端间距（较小） */
+@media (max-width: 767px) {
+  :root {
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 12px;
+    --spacing-lg: 16px;
+    --spacing-xl: 20px;
+    --spacing-2xl: 24px;
+    --spacing-3xl: 32px;
+  }
+}
+
+/* 平板端间距（中等） */
+@media (min-width: 768px) and (max-width: 1024px) {
+  :root {
+    --spacing-xs: 6px;
+    --spacing-sm: 12px;
+    --spacing-md: 16px;
+    --spacing-lg: 20px;
+    --spacing-xl: 24px;
+    --spacing-2xl: 32px;
+    --spacing-3xl: 40px;
+  }
+}
+
+/* 电脑端间距（较大） */
+@media (min-width: 1025px) {
+  :root {
+    --spacing-xs: 8px;
+    --spacing-sm: 12px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
+    --spacing-2xl: 40px;
+    --spacing-3xl: 48px;
+  }
+}
+
+/* ========== 响应式组件尺寸 ========== */
+
+/* 按钮高度 */
+@media (max-width: 767px) {
+  :root {
+    --button-height-large: 48px;
+    --button-height: 44px;
+    --button-height-small: 36px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  :root {
+    --button-height-large: 44px;
+    --button-height: 40px;
+    --button-height-small: 32px;
+  }
+}
+
+@media (min-width: 1025px) {
+  :root {
+    --button-height-large: 44px;
+    --button-height: 40px;
+    --button-height-small: 32px;
+  }
+}
+
+/* 输入框高度 */
+@media (max-width: 767px) {
+  :root {
+    --input-height-large: 48px;
+    --input-height: 44px;
+    --input-height-small: 36px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  :root {
+    --input-height-large: 44px;
+    --input-height: 40px;
+    --input-height-small: 32px;
+  }
+}
+
+@media (min-width: 1025px) {
+  :root {
+    --input-height-large: 44px;
+    --input-height: 40px;
+    --input-height-small: 32px;
+  }
+}
+
+/* 卡片圆角 */
+:root {
+  --card-radius-mobile: 12px;
+  --card-radius-tablet: 16px;
+  --card-radius-desktop: 20px;
+}
+
+/* 容器最大宽度 */
+:root {
+  --container-max-width-mobile: 100%;
+  --container-max-width-tablet: 700px;
+  --container-max-width-desktop: 1200px;
+}
+
+/* ========== 响应式工具类 ========== */
+
+/* 显示/隐藏工具类 */
+.mobile-only {
+  display: none;
+}
+
+.tablet-only {
+  display: none;
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-only {
+    display: block;
+  }
+  
+  .tablet-hide,
+  .desktop-hide {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .tablet-only {
+    display: block;
+  }
+  
+  .mobile-hide,
+  .desktop-hide {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1025px) {
+  .desktop-only {
+    display: block;
+  }
+  
+  .mobile-hide,
+  .tablet-hide {
+    display: none !important;
+  }
+}
+
+/* 响应式文本对齐 */
+@media (max-width: 767px) {
+  .text-center-mobile {
+    text-align: center;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  .text-center-tablet {
+    text-align: center;
+  }
+}
+
+/* 响应式间距工具类 */
+.spacing-mobile-sm {
+  padding: var(--spacing-sm);
+}
+
+.spacing-mobile-md {
+  padding: var(--spacing-md);
+}
+
+.spacing-mobile-lg {
+  padding: var(--spacing-lg);
+}
+
+@media (min-width: 768px) {
+  .spacing-mobile-sm,
+  .spacing-mobile-md,
+  .spacing-mobile-lg {
+    padding: 0;
+  }
+}
+

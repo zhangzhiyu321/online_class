@@ -54,140 +54,143 @@
         </div>
       </el-card>
 
-      <!-- 详细信息 -->
-      <div class="detail-sections">
-        <!-- 个人简介 -->
-        <el-card class="section-card">
-          <template #header>
-            <span class="section-title">个人简介</span>
-          </template>
-          <p class="introduction">{{ teacherInfo.introduction || '暂无简介' }}</p>
-        </el-card>
-
-        <!-- 教学信息 -->
-        <el-card class="section-card">
-          <template #header>
-            <span class="section-title">教学信息</span>
-          </template>
-          <div class="teaching-info">
-            <div class="info-item">
-              <span class="label">教学阶段：</span>
-              <el-tag
-                v-for="stage in teacherInfo.stages"
-                :key="stage.id"
-                class="info-tag"
-              >
-                {{ stage.name }}
-              </el-tag>
-            </div>
-            <div class="info-item">
-              <span class="label">可教科目：</span>
-              <div class="subjects-list">
-                <div
-                  v-for="teaching in teacherInfo.teachings"
-                  :key="teaching.id"
-                  class="subject-item"
-                >
-                  <el-tag type="primary" class="subject-tag">
-                    {{ teaching.subjectName }}
-                  </el-tag>
-                  <span class="price">¥{{ teaching.pricePerHour }}/小时</span>
-                </div>
+      <!-- 详细信息 - 使用标签页分组 -->
+      <el-card class="tabs-card">
+        <el-tabs v-model="activeTab" class="detail-tabs">
+          <!-- 简介与教学 -->
+          <el-tab-pane label="简介与教学" name="info">
+            <div class="tab-content">
+              <!-- 个人简介 -->
+              <div class="info-section-item">
+                <h3 class="section-title-small">个人简介</h3>
+                <p class="introduction">{{ teacherInfo.introduction || '暂无简介' }}</p>
               </div>
-            </div>
-            <div v-if="teacherInfo.teachingStyle" class="info-item">
-              <span class="label">教学风格：</span>
-              <p class="teaching-style">{{ teacherInfo.teachingStyle }}</p>
-            </div>
-          </div>
-        </el-card>
 
-        <!-- 空闲时间表 -->
-        <el-card class="section-card">
-          <template #header>
-            <span class="section-title">可授课时间</span>
-          </template>
-          <div class="schedule-section">
-            <div v-if="teacherInfo.schedules && teacherInfo.schedules.length > 0" class="schedule-container">
-              <!-- 日历视图 -->
-              <div class="calendar-wrapper">
-                <el-calendar v-model="selectedDate">
-                  <template #date-cell="{ data }">
-                    <div 
-                      class="calendar-cell"
-                      :class="{
-                        'has-schedule': isAvailableDate(data.day),
-                        'selected': isSelectedDate(data.day)
-                      }"
-                      @click="selectDate(data.day)"
-                    >
-                      <div class="date-number">{{ data.day.split('-').slice(2).join('-') }}</div>
-                      <div v-if="isAvailableDate(data.day)" class="available-dot"></div>
+              <!-- 教学信息 -->
+              <div class="info-section-item">
+                <h3 class="section-title-small">教学信息</h3>
+                <div class="teaching-info">
+                  <div class="info-item">
+                    <span class="label">教学阶段：</span>
+                    <div class="tags-wrapper">
+                      <el-tag
+                        v-for="stage in teacherInfo.stages"
+                        :key="stage.id"
+                        class="info-tag"
+                      >
+                        {{ stage.name }}
+                      </el-tag>
                     </div>
-                  </template>
-                </el-calendar>
-              </div>
-              
-              <!-- 选中日期的时间段详情 -->
-              <div v-if="selectedDateStr" class="time-detail">
-                <div class="detail-header">
-                  <h3 class="detail-title">{{ formatSelectedDate(selectedDateStr) }}</h3>
-                  <span class="detail-subtitle">{{ getWeekdayName(selectedDateStr) }}</span>
-                </div>
-                <div class="time-slots-list">
-                  <div
-                    v-for="schedule in getSchedulesForDate(selectedDateStr)"
-                    :key="schedule.id"
-                    class="time-slot-item"
-                  >
-                    <el-icon class="time-icon"><Clock /></el-icon>
-                    <span class="time-range-text">
-                      {{ formatTimeRange(schedule.startTime, schedule.endTime) }}
-                    </span>
                   </div>
-                  <div v-if="getSchedulesForDate(selectedDateStr).length === 0" class="no-time-slots">
-                    <el-empty description="该日期暂无可预约时间段" :image-size="80" />
+                  <div class="info-item">
+                    <span class="label">可教科目：</span>
+                    <div class="subjects-list">
+                      <div
+                        v-for="teaching in teacherInfo.teachings"
+                        :key="teaching.id"
+                        class="subject-item"
+                      >
+                        <el-tag type="primary" class="subject-tag">
+                          {{ teaching.stageName }}{{ teaching.subjectName }}
+                        </el-tag>
+                        <span class="price">¥{{ teaching.pricePerHour }}/小时</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div v-if="teacherInfo.teachingStyle" class="info-item">
+                    <span class="label">教学风格：</span>
+                    <p class="teaching-style">{{ teacherInfo.teachingStyle }}</p>
                   </div>
                 </div>
-              </div>
-              <div v-else class="time-detail-placeholder">
-                <el-empty description="请点击日历上的日期查看具体时间段" :image-size="100" />
               </div>
             </div>
-            <el-empty v-else description="暂无可授课时间" />
-          </div>
-        </el-card>
+          </el-tab-pane>
 
-        <!-- 学生评价 -->
-        <el-card class="section-card">
-          <template #header>
-            <span class="section-title">学生评价 ({{ reviews.length }})</span>
-          </template>
-          <div v-if="reviews.length > 0" class="reviews-list">
-            <div
-              v-for="review in reviews"
-              :key="review.id"
-              class="review-item"
-            >
-              <div class="review-header">
-                <el-avatar :size="40">{{ review.studentName?.[0] || '学' }}</el-avatar>
-                <div class="review-meta">
-                  <span class="review-name">{{ review.studentName || '匿名' }}</span>
-                  <el-rate
-                    v-model="review.rating"
-                    disabled
-                    size="small"
-                    text-color="#ff9900"
-                  />
-                  <span class="review-time">{{ formatTime(review.createdAt) }}</span>
+          <!-- 可授课时间 -->
+          <el-tab-pane label="可授课时间" name="schedule">
+            <div class="tab-content">
+              <div class="schedule-section">
+                <div v-if="teacherInfo.schedules && teacherInfo.schedules.length > 0" class="schedule-container">
+                  <!-- 日历视图 -->
+                  <div class="calendar-wrapper">
+                    <el-calendar v-model="selectedDate">
+                      <template #date-cell="{ data }">
+                        <div 
+                          class="calendar-cell"
+                          :class="{
+                            'has-schedule': isAvailableDate(data.day),
+                            'selected': isSelectedDate(data.day)
+                          }"
+                          @click="selectDate(data.day)"
+                        >
+                          <div class="date-number">{{ data.day.split('-').slice(2).join('-') }}</div>
+                          <div v-if="isAvailableDate(data.day)" class="available-dot"></div>
+                        </div>
+                      </template>
+                    </el-calendar>
+                  </div>
+                  
+                  <!-- 选中日期的时间段详情 -->
+                  <div v-if="selectedDateStr" class="time-detail">
+                    <div class="detail-header">
+                      <h3 class="detail-title">{{ formatSelectedDate(selectedDateStr) }}</h3>
+                      <span class="detail-subtitle">{{ getWeekdayName(selectedDateStr) }}</span>
+                    </div>
+                    <div class="time-slots-list">
+                      <div
+                        v-for="schedule in getSchedulesForDate(selectedDateStr)"
+                        :key="schedule.id"
+                        class="time-slot-item"
+                      >
+                        <el-icon class="time-icon"><Clock /></el-icon>
+                        <span class="time-range-text">
+                          {{ formatTimeRange(schedule.startTime, schedule.endTime) }}
+                        </span>
+                      </div>
+                      <div v-if="getSchedulesForDate(selectedDateStr).length === 0" class="no-time-slots">
+                        <el-empty description="该日期暂无可预约时间段" :image-size="80" />
+                      </div>
+                    </div>
+                  </div>
+                  <div v-else class="time-detail-placeholder">
+                    <el-empty description="请点击日历上的日期查看具体时间段" :image-size="100" />
+                  </div>
+                </div>
+                <el-empty v-else description="暂无可授课时间" />
+              </div>
+            </div>
+          </el-tab-pane>
+
+          <!-- 学生评价 -->
+          <el-tab-pane :label="`学生评价 (${reviews.length})`" name="reviews">
+            <div class="tab-content">
+              <div v-if="reviews.length > 0" class="reviews-list">
+                <div
+                  v-for="review in reviews"
+                  :key="review.id"
+                  class="review-item"
+                >
+                  <div class="review-header">
+                    <el-avatar :size="40">{{ review.studentName?.[0] || '学' }}</el-avatar>
+                    <div class="review-meta">
+                      <span class="review-name">{{ review.studentName || '匿名' }}</span>
+                      <el-rate
+                        v-model="review.rating"
+                        disabled
+                        size="small"
+                        text-color="#ff9900"
+                      />
+                      <span class="review-time">{{ formatTime(review.createdAt) }}</span>
+                    </div>
+                  </div>
+                  <p v-if="review.content" class="review-content">{{ review.content }}</p>
                 </div>
               </div>
-              <p v-if="review.content" class="review-content">{{ review.content }}</p>
+              <el-empty v-else description="暂无评价" />
             </div>
-          </div>
-          <el-empty v-else description="暂无评价" />
-        </el-card>
-      </div>
+          </el-tab-pane>
+        </el-tabs>
+      </el-card>
     </div>
   </div>
 </template>
@@ -208,6 +211,7 @@ const reviews = ref([])
 const loading = ref(false)
 const selectedDate = ref(new Date())
 const selectedDateStr = ref('')
+const activeTab = ref('info')
 
 const loadTeacherDetail = async () => {
   loading.value = true
@@ -363,26 +367,30 @@ onMounted(() => {
 
 <style scoped>
 .teacher-detail {
-  max-width: 1200px;
+  max-width: var(--container-max-width-desktop, 1200px);
   margin: 0 auto;
-  padding: 0 16px;
+  padding: 0 var(--spacing-md, 16px);
 }
 
 .back-button {
-  margin-bottom: 20px;
-  padding: 8px 16px;
-  border-radius: 12px;
+  margin-bottom: var(--spacing-lg, 20px);
+  padding: var(--spacing-sm, 8px) var(--spacing-md, 16px);
+  font-size: var(--font-size-body-small, 14px);
+  color: #6b7280;
+  border-radius: 8px;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .back-button:hover {
+  color: #3b82f6;
   background: #f3f4f6;
+  transform: translateX(-4px);
 }
 
 .detail-content {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--spacing-lg, 20px);
 }
 
 .info-card {
@@ -414,9 +422,9 @@ onMounted(() => {
 }
 
 .teacher-name {
-  font-size: 28px;
+  font-size: var(--font-size-h1, 28px);
   font-weight: 600;
-  margin-bottom: 12px;
+  margin-bottom: var(--spacing-md, 12px);
   color: #1a1a1a;
   letter-spacing: -0.5px;
 }
@@ -430,7 +438,7 @@ onMounted(() => {
 }
 
 .rating-text {
-  font-size: 14px;
+  font-size: var(--font-size-body-small, 14px);
   color: #6b7280;
 }
 
@@ -443,7 +451,7 @@ onMounted(() => {
 }
 
 .teaching-years {
-  font-size: 14px;
+  font-size: var(--font-size-body-small, 14px);
   color: #6b7280;
 }
 
@@ -460,29 +468,63 @@ onMounted(() => {
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-.detail-sections {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.section-card {
+.tabs-card {
   margin-bottom: 0;
   border-radius: 20px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
-.section-title {
-  font-size: 18px;
+.detail-tabs {
+  margin-top: -10px;
+}
+
+.detail-tabs :deep(.el-tabs__header) {
+  margin-bottom: 20px;
+}
+
+.detail-tabs :deep(.el-tabs__item) {
+  font-size: 15px;
+  font-weight: 500;
+  padding: 0 20px;
+}
+
+.detail-tabs :deep(.el-tabs__active-bar) {
+  height: 3px;
+}
+
+.tab-content {
+  min-height: 200px;
+}
+
+.info-section-item {
+  margin-bottom: 32px;
+}
+
+.info-section-item:last-child {
+  margin-bottom: 0;
+}
+
+.section-title-small {
+  font-size: var(--font-size-h6, 16px);
   font-weight: 600;
   color: #1a1a1a;
+  margin: 0 0 var(--spacing-md, 16px) 0;
+  padding-bottom: var(--spacing-md, 12px);
+  border-bottom: 2px solid #f3f4f6;
+}
+
+.tags-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
 }
 
 .introduction {
   line-height: 1.8;
   color: #4b5563;
   white-space: pre-wrap;
-  font-size: 15px;
+  font-size: var(--font-size-body-small, 15px);
 }
 
 .teaching-info {
@@ -495,18 +537,23 @@ onMounted(() => {
   display: flex;
   align-items: flex-start;
   gap: 12px;
+  margin-bottom: 20px;
   flex-wrap: wrap;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
 }
 
 .label {
   font-weight: 600;
   color: #374151;
-  min-width: 100px;
-  font-size: 15px;
+  min-width: 90px;
+  font-size: var(--font-size-body-small, 14px);
+  flex-shrink: 0;
 }
 
 .info-tag {
-  margin-right: 8px;
   border-radius: 12px;
 }
 
@@ -540,28 +587,68 @@ onMounted(() => {
 .price {
   color: #ef4444;
   font-weight: 600;
-  font-size: 16px;
+  font-size: var(--font-size-h6, 16px);
 }
 
 .teaching-style {
   color: #4b5563;
   line-height: 1.8;
   margin: 0;
-  font-size: 15px;
+  font-size: var(--font-size-body-small, 15px);
 }
 
 .schedule-section {
-  padding: 12px 0;
+  padding: 0;
 }
 
 .schedule-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 20px;
 }
 
 .calendar-wrapper {
   width: 100%;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 2px solid #e5e7eb;
+  overflow: hidden;
+}
+
+.calendar-wrapper :deep(.el-calendar) {
+  border: none;
+  background: transparent;
+}
+
+.calendar-wrapper :deep(.el-calendar__header) {
+  padding: 20px 20px 16px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: transparent;
+}
+
+.calendar-wrapper :deep(.el-calendar__body) {
+  padding: 16px 20px 20px 20px;
+}
+
+.calendar-wrapper :deep(.el-calendar-table) {
+  border: none;
+}
+
+.calendar-wrapper :deep(.el-calendar-table thead th) {
+  border: none;
+  padding: 12px 0;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.calendar-wrapper :deep(.el-calendar-table td) {
+  border: none;
+  padding: 4px;
+}
+
+.calendar-wrapper :deep(.el-calendar-table .el-calendar-day) {
+  padding: 0;
+  height: auto;
 }
 
 .calendar-cell {
@@ -621,6 +708,8 @@ onMounted(() => {
   border-radius: 16px;
   padding: 24px;
   border: 2px solid #e5e7eb;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .detail-header {
@@ -630,14 +719,14 @@ onMounted(() => {
 }
 
 .detail-title {
-  font-size: 20px;
+  font-size: var(--font-size-h4, 20px);
   font-weight: 600;
   color: #1a1a1a;
-  margin: 0 0 4px 0;
+  margin: 0 0 var(--spacing-xs, 4px) 0;
 }
 
 .detail-subtitle {
-  font-size: 14px;
+  font-size: var(--font-size-body-small, 14px);
   color: #6b7280;
 }
 
@@ -671,7 +760,7 @@ onMounted(() => {
 }
 
 .time-range-text {
-  font-size: 16px;
+  font-size: var(--font-size-h6, 16px);
   font-weight: 500;
   color: #1a1a1a;
 }
@@ -686,6 +775,8 @@ onMounted(() => {
   padding: 40px 20px;
   border: 2px dashed #d1d5db;
   text-align: center;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* 响应式设计 */
@@ -743,11 +834,11 @@ onMounted(() => {
 .review-name {
   font-weight: 600;
   color: #1a1a1a;
-  font-size: 15px;
+  font-size: var(--font-size-body-small, 15px);
 }
 
 .review-time {
-  font-size: 12px;
+  font-size: var(--font-size-small, 12px);
   color: #9ca3af;
 }
 
@@ -755,30 +846,50 @@ onMounted(() => {
   color: #4b5563;
   line-height: 1.6;
   margin: 0;
-  font-size: 14px;
+  font-size: var(--font-size-body-small, 14px);
 }
 
-/* 响应式设计 */
-@media (max-width: 1024px) {
+/* 响应式设计 - 平板端 */
+@media (min-width: 768px) and (max-width: 1024px) {
   .teacher-detail {
-    padding: 0 12px;
+    padding: 0 var(--spacing-md, 16px);
+    max-width: var(--container-max-width-tablet, 700px);
   }
   
   .teacher-header {
-    gap: 20px;
+    gap: var(--spacing-lg, 20px);
+  }
+
+  .teacher-name {
+    font-size: var(--font-size-h2, 24px);
+  }
+
+  .detail-content {
+    gap: var(--spacing-md, 16px);
   }
 }
 
+/* 响应式设计 - 手机端 */
 @media (max-width: 767px) {
   .teacher-detail {
-    padding: 0 12px;
+    padding: 0 var(--spacing-md, 12px);
+  }
+
+  .back-button {
+    margin-bottom: var(--spacing-md, 16px);
+    font-size: var(--font-size-body-small, 13px);
+    padding: var(--spacing-sm, 8px) var(--spacing-md, 12px);
+  }
+
+  .detail-content {
+    gap: var(--spacing-md, 16px);
   }
 
   .teacher-header {
     flex-direction: column;
     align-items: center;
     text-align: center;
-    gap: 16px;
+    gap: var(--spacing-md, 16px);
   }
 
   .info-section {
@@ -786,56 +897,104 @@ onMounted(() => {
   }
 
   .teacher-name {
-    font-size: 24px;
+    font-size: var(--font-size-h3, 20px);
   }
 
   .appointment-button {
     width: 100%;
+    height: var(--button-height, 44px);
+    font-size: var(--font-size-button, 16px);
   }
 
   .info-item {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: var(--spacing-sm, 8px);
   }
 
   .label {
     min-width: auto;
+    margin-bottom: var(--spacing-xs, 4px);
+    font-size: var(--font-size-body-small, 13px);
   }
 
-  .cert-item {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-  }
-
-  .cert-image {
+  .tags-wrapper {
     width: 100%;
-    max-width: 200px;
-    height: auto;
-    aspect-ratio: 1;
   }
 
   .subject-item {
     flex-wrap: wrap;
   }
 
-  .detail-sections {
-    gap: 16px;
+  .tabs-card {
+    border-radius: var(--card-radius-mobile, 12px);
   }
 
-  .section-card {
-    border-radius: 16px;
+  .detail-tabs :deep(.el-tabs__item) {
+    font-size: var(--font-size-body-small, 14px);
+    padding: 0 var(--spacing-md, 12px);
+  }
+
+  .info-section-item {
+    margin-bottom: var(--spacing-xl, 24px);
+  }
+
+  .section-title-small {
+    font-size: var(--font-size-h6, 15px);
+    margin-bottom: var(--spacing-md, 12px);
+  }
+
+  .calendar-wrapper {
+    border-radius: var(--card-radius-mobile, 12px);
+  }
+
+  .calendar-wrapper :deep(.el-calendar__header) {
+    padding: var(--spacing-md, 16px) var(--spacing-md, 12px) var(--spacing-md, 12px) var(--spacing-md, 12px);
+  }
+
+  .calendar-wrapper :deep(.el-calendar__body) {
+    padding: var(--spacing-md, 12px);
+  }
+
+  .calendar-wrapper :deep(.el-calendar-table) {
+    font-size: var(--font-size-small, 12px);
+  }
+
+  .time-detail {
+    padding: var(--spacing-md, 16px);
+    border-radius: var(--card-radius-mobile, 12px);
+  }
+
+  .time-detail-placeholder {
+    padding: 30px var(--spacing-md, 16px);
+    border-radius: var(--card-radius-mobile, 12px);
+  }
+
+  .schedule-container {
+    gap: var(--spacing-md, 16px);
+  }
+
+  .detail-title {
+    font-size: var(--font-size-h5, 18px);
+  }
+
+  .time-range-text {
+    font-size: var(--font-size-body, 14px);
+  }
+
+  .review-item {
+    padding: var(--spacing-md, 16px);
   }
 }
 
+/* 响应式设计 - 小屏手机 */
 @media (max-width: 480px) {
   .teacher-name {
-    font-size: 20px;
+    font-size: var(--font-size-h4, 18px);
   }
 
   .section-title {
-    font-size: 16px;
+    font-size: var(--font-size-h6, 16px);
   }
 
   .rating-section {
