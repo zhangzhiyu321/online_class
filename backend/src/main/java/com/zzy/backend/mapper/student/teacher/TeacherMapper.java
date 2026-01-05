@@ -1,8 +1,7 @@
 package com.zzy.backend.mapper.student.teacher;
 
 import com.zzy.backend.dto.request.student.teacher.TeacherListRequest;
-import com.zzy.backend.dto.response.student.teacher.SubjectResponse;
-import com.zzy.backend.dto.response.student.teacher.TeacherListItemResponse;
+import com.zzy.backend.dto.response.student.teacher.*;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -54,5 +53,37 @@ public interface TeacherMapper {
      * @return 认证数量
      */
     Long countCertifiedTeacher(@Param("userId") Long userId);
+
+    /**
+     * 查询教师详情基本信息
+     *
+     * @param userId 教师用户ID
+     * @return 教师详情
+     */
+    TeacherDetailResponse selectTeacherDetail(@Param("userId") Long userId);
+
+    /**
+     * 查询教师的教学阶段列表
+     *
+     * @param userId 教师用户ID
+     * @return 阶段列表
+     */
+    List<StageResponse> selectTeacherStages(@Param("userId") Long userId);
+
+    /**
+     * 查询教师的教学信息列表
+     *
+     * @param userId 教师用户ID
+     * @return 教学信息列表
+     */
+    List<TeachingResponse> selectTeacherTeachings(@Param("userId") Long userId);
+
+    /**
+     * 查询教师的时间表列表
+     *
+     * @param userId 教师用户ID
+     * @return 时间表列表
+     */
+    List<ScheduleResponse> selectTeacherSchedules(@Param("userId") Long userId);
 }
 

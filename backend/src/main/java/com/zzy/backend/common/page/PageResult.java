@@ -37,19 +37,17 @@ public class PageResult<T> {
     public PageResult() {
     }
     
-    public PageResult(List<T> list, Long total, Integer page, Integer pageSize) {
-        this.list = list;
-        this.total = total;
-        this.page = page;
-        this.pageSize = pageSize;
-        this.totalPages = (int) Math.ceil((double) total / pageSize);
-    }
-    
     /**
      * 创建分页结果
      */
     public static <T> PageResult<T> of(List<T> list, Long total, Integer page, Integer pageSize) {
-        return new PageResult<>(list, total, page, pageSize);
+        PageResult<T> result = new PageResult<>();
+        result.list = list;
+        result.total = total;
+        result.page = page;
+        result.pageSize = pageSize;
+        result.totalPages = (int)Math.ceil((double)total/pageSize);
+        return result;
     }
 }
 

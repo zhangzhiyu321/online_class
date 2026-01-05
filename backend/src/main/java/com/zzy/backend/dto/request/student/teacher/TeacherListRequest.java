@@ -7,7 +7,8 @@ import java.math.BigDecimal;
  * 教师列表查询请求DTO
  */
 @Data
-public class TeacherListRequest {
+public class
+TeacherListRequest {
     /**
      * 页码，从1开始
      */

@@ -22,6 +22,48 @@
         <result property="name" column="name"/>
     </resultMap>
 
+    <!-- 教师详情结果映射 -->
+    <resultMap id="TeacherDetailResultMap" type="com.zzy.backend.dto.response.student.teacher.TeacherDetailResponse">
+        <id property="id" column="id"/>
+        <result property="nickname" column="nickname"/>
+        <result property="realName" column="real_name"/>
+        <result property="avatar" column="avatar"/>
+        <result property="introduction" column="introduction"/>
+        <result property="teachingYears" column="teaching_years"/>
+        <result property="teachingStyle" column="teaching_style"/>
+        <result property="rating" column="rating"/>
+        <result property="ratingCount" column="rating_count"/>
+        <result property="certified" column="certified"/>
+        <result property="onlineStatus" column="online_status"/>
+    </resultMap>
+
+    <!-- 阶段结果映射 -->
+    <resultMap id="StageResultMap" type="com.zzy.backend.dto.response.student.teacher.StageResponse">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+    </resultMap>
+
+    <!-- 教学信息结果映射 -->
+    <resultMap id="TeachingResultMap" type="com.zzy.backend.dto.response.student.teacher.TeachingResponse">
+        <id property="id" column="id"/>
+        <result property="stageId" column="stage_id"/>
+        <result property="stageName" column="stage_name"/>
+        <result property="subjectId" column="subject_id"/>
+        <result property="subjectName" column="subject_name"/>
+        <result property="pricePerHour" column="price_per_hour"/>
+    </resultMap>
+
+    <!-- 时间表结果映射 -->
+    <resultMap id="ScheduleResultMap" type="com.zzy.backend.dto.response.student.teacher.ScheduleResponse">
+        <id property="id" column="id"/>
+        <result property="weekday" column="weekday"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="scheduleType" column="schedule_type"/>
+        <result property="startDate" column="start_date"/>
+        <result property="endDate" column="end_date"/>
+    </resultMap>
+
     <!-- ========== 公共 SQL 片段 ========== -->
 
     <!-- 基础用户条件：教师角色、启用状态、未删除 -->
@@ -213,6 +255,86 @@
         WHERE user_id = #{userId}
         AND status = 2
         AND deleted_at IS NULL
+    </select>
+
+    <!-- 查询教师详情基本信息 -->
+    <select id="selectTeacherDetail" resultMap="TeacherDetailResultMap">
+        SELECT
+            u.id,
+            u.nickname,
+            tp.real_name,
+            u.avatar,
+            tp.introduction,
+            COALESCE(tp.teaching_years, 0) AS teaching_years,
+            tp.teaching_style,
+            COALESCE(tp.rating, 0) AS rating,
+            COALESCE(tp.rating_count, 0) AS rating_count,
+            CASE WHEN cert_count.count > 0 THEN TRUE ELSE FALSE END AS certified,
+            u.online_status
+        FROM users u
+        LEFT JOIN teacher_profiles tp ON u.id = tp.user_id AND tp.deleted_at IS NULL
+        LEFT JOIN (
+            SELECT user_id, COUNT(*) AS count
+            FROM teacher_certifications
+            WHERE status = 2 AND deleted_at IS NULL
+            GROUP BY user_id
+        ) cert_count ON u.id = cert_count.user_id
+        WHERE u.id = #{userId}
+        AND u.role = 2
+        AND u.status = 1
+        AND u.deleted_at IS NULL
+    </select>
+
+    <!-- 查询教师的教学阶段列表 -->
+    <select id="selectTeacherStages" resultMap="StageResultMap">
+        SELECT DISTINCT s.id, s.name, s.sort_order
+        FROM teacher_teachings tt
+        INNER JOIN teaching_stages s ON tt.stage_id = s.id
+        WHERE tt.user_id = #{userId}
+        AND tt.status = 1
+        AND tt.deleted_at IS NULL
+        AND s.status = 1
+        AND s.deleted_at IS NULL
+        ORDER BY s.sort_order, s.id
+    </select>
+
+    <!-- 查询教师的教学信息列表 -->
+    <select id="selectTeacherTeachings" resultMap="TeachingResultMap">
+        SELECT
+            tt.id,
+            tt.stage_id,
+            st.name AS stage_name,
+            tt.subject_id,
+            su.name AS subject_name,
+            tt.price_per_hour
+        FROM teacher_teachings tt
+        INNER JOIN teaching_stages st ON tt.stage_id = st.id
+        INNER JOIN subjects su ON tt.subject_id = su.id
+        WHERE tt.user_id = #{userId}
+        AND tt.status = 1
+        AND tt.deleted_at IS NULL
+        AND st.status = 1
+        AND st.deleted_at IS NULL
+        AND su.status = 1
+        AND su.deleted_at IS NULL
+        ORDER BY st.sort_order, st.id, su.sort_order, su.id
+    </select>
+
+    <!-- 查询教师的时间表列表 -->
+    <select id="selectTeacherSchedules" resultMap="ScheduleResultMap">
+        SELECT
+            id,
+            weekday,
+            TIME_FORMAT(start_time, '%H:%i:%s') AS start_time,
+            TIME_FORMAT(end_time, '%H:%i:%s') AS end_time,
+            schedule_type,
+            DATE_FORMAT(start_date, '%Y-%m-%d') AS start_date,
+            DATE_FORMAT(end_date, '%Y-%m-%d') AS end_date
+        FROM teacher_schedules
+        WHERE user_id = #{userId}
+        AND status = 1
+        AND deleted_at IS NULL
+        ORDER BY schedule_type, weekday, start_time
     </select>
 
 </mapper>

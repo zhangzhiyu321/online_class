@@ -102,46 +102,59 @@
           </div>
         </el-card>
 
-        <!-- 学历认证 -->
-        <el-card v-if="teacherInfo.certifications && teacherInfo.certifications.length > 0" class="section-card">
-          <template #header>
-            <span class="section-title">学历认证</span>
-          </template>
-          <div class="certifications">
-            <div
-              v-for="cert in teacherInfo.certifications"
-              :key="cert.id"
-              class="cert-item"
-            >
-              <el-image
-                :src="cert.certificateImage"
-                :preview-src-list="[cert.certificateImage]"
-                fit="cover"
-                class="cert-image"
-              />
-              <div class="cert-info">
-                <p><strong>学校：</strong>{{ cert.schoolName }}</p>
-                <p><strong>专业：</strong>{{ cert.major }}</p>
-                <p><strong>学历：</strong>{{ cert.degree }}</p>
-              </div>
-            </div>
-          </div>
-        </el-card>
-
         <!-- 空闲时间表 -->
         <el-card class="section-card">
           <template #header>
             <span class="section-title">可授课时间</span>
           </template>
           <div class="schedule-section">
-            <el-calendar v-model="selectedDate">
-              <template #date-cell="{ data }">
-                <div class="calendar-cell">
-                  <div class="date-number">{{ data.day.split('-').slice(2).join('-') }}</div>
-                  <div v-if="isAvailableDate(data.day)" class="available-mark">可预约</div>
+            <div v-if="teacherInfo.schedules && teacherInfo.schedules.length > 0" class="schedule-container">
+              <!-- 日历视图 -->
+              <div class="calendar-wrapper">
+                <el-calendar v-model="selectedDate">
+                  <template #date-cell="{ data }">
+                    <div 
+                      class="calendar-cell"
+                      :class="{
+                        'has-schedule': isAvailableDate(data.day),
+                        'selected': isSelectedDate(data.day)
+                      }"
+                      @click="selectDate(data.day)"
+                    >
+                      <div class="date-number">{{ data.day.split('-').slice(2).join('-') }}</div>
+                      <div v-if="isAvailableDate(data.day)" class="available-dot"></div>
+                    </div>
+                  </template>
+                </el-calendar>
+              </div>
+              
+              <!-- 选中日期的时间段详情 -->
+              <div v-if="selectedDateStr" class="time-detail">
+                <div class="detail-header">
+                  <h3 class="detail-title">{{ formatSelectedDate(selectedDateStr) }}</h3>
+                  <span class="detail-subtitle">{{ getWeekdayName(selectedDateStr) }}</span>
                 </div>
-              </template>
-            </el-calendar>
+                <div class="time-slots-list">
+                  <div
+                    v-for="schedule in getSchedulesForDate(selectedDateStr)"
+                    :key="schedule.id"
+                    class="time-slot-item"
+                  >
+                    <el-icon class="time-icon"><Clock /></el-icon>
+                    <span class="time-range-text">
+                      {{ formatTimeRange(schedule.startTime, schedule.endTime) }}
+                    </span>
+                  </div>
+                  <div v-if="getSchedulesForDate(selectedDateStr).length === 0" class="no-time-slots">
+                    <el-empty description="该日期暂无可预约时间段" :image-size="80" />
+                  </div>
+                </div>
+              </div>
+              <div v-else class="time-detail-placeholder">
+                <el-empty description="请点击日历上的日期查看具体时间段" :image-size="100" />
+              </div>
+            </div>
+            <el-empty v-else description="暂无可授课时间" />
           </div>
         </el-card>
 
@@ -183,7 +196,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getTeacherDetail, getTeacherReviews } from '@/api/teacher'
-import { ArrowLeft, User } from '@element-plus/icons-vue'
+import { ArrowLeft, User, Clock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
@@ -194,6 +207,7 @@ const teacherInfo = ref(null)
 const reviews = ref([])
 const loading = ref(false)
 const selectedDate = ref(new Date())
+const selectedDateStr = ref('')
 
 const loadTeacherDetail = async () => {
   loading.value = true
@@ -217,6 +231,7 @@ const loadReviews = async () => {
   }
 }
 
+// 检查日期是否可预约
 const isAvailableDate = (date) => {
   if (!teacherInfo.value || !teacherInfo.value.schedules) {
     return false
@@ -224,28 +239,110 @@ const isAvailableDate = (date) => {
   
   const dateObj = new Date(date)
   const weekday = dateObj.getDay() === 0 ? 7 : dateObj.getDay() // 转换为1-7（周一到周日）
-  const dateStr = dateObj.toISOString().split('T')[0]
+  const dateStr = dateObj.toISOString().split('T')[0] // yyyy-MM-dd 格式
   
   // 检查是否有该日期的时间段
-  const hasSchedule = teacherInfo.value.schedules.some(schedule => {
-    // 固定周期时间段
-    if (schedule.scheduleType === 1 && schedule.weekday === weekday && schedule.status === 1) {
+  return teacherInfo.value.schedules.some(schedule => {
+    // 固定周期时间段（每周重复，scheduleType === 1）
+    if (schedule.scheduleType === 1 && schedule.weekday === weekday) {
       return true
     }
-    // 临时时间段
-    if (schedule.scheduleType === 2 && schedule.status === 1) {
-      const startDate = schedule.startDate ? new Date(schedule.startDate).toISOString().split('T')[0] : null
-      const endDate = schedule.endDate ? new Date(schedule.endDate).toISOString().split('T')[0] : null
-      if (startDate && endDate && dateStr >= startDate && dateStr <= endDate) {
-        // 还需要检查星期几是否匹配
-        const scheduleWeekday = new Date(schedule.startDate).getDay() === 0 ? 7 : new Date(schedule.startDate).getDay()
+    
+    // 临时时间段（特定日期范围，scheduleType === 2）
+    if (schedule.scheduleType === 2 && schedule.startDate && schedule.endDate) {
+      const startDate = schedule.startDate.split('T')[0] // 处理可能的日期时间格式
+      const endDate = schedule.endDate.split('T')[0]
+      // 检查日期是否在范围内
+      if (dateStr >= startDate && dateStr <= endDate) {
+        // 还需要检查星期几是否匹配（临时时间段也基于星期几）
+        const scheduleDate = new Date(schedule.startDate)
+        const scheduleWeekday = scheduleDate.getDay() === 0 ? 7 : scheduleDate.getDay()
         return scheduleWeekday === weekday
       }
     }
+    
     return false
   })
+}
+
+// 检查日期是否被选中
+const isSelectedDate = (date) => {
+  return selectedDateStr.value === date
+}
+
+// 选择日期
+const selectDate = (date) => {
+  if (isAvailableDate(date)) {
+    selectedDateStr.value = date
+  } else {
+    ElMessage.warning('该日期暂无可预约时间')
+  }
+}
+
+// 获取选中日期的时间段
+const getSchedulesForDate = (date) => {
+  if (!teacherInfo.value || !teacherInfo.value.schedules || !date) {
+    return []
+  }
   
-  return hasSchedule
+  const dateObj = new Date(date)
+  const weekday = dateObj.getDay() === 0 ? 7 : dateObj.getDay() // 转换为1-7（周一到周日）
+  const dateStr = dateObj.toISOString().split('T')[0] // yyyy-MM-dd 格式
+  
+  // 返回该日期的时间段（包括固定周期和临时时间段）
+  return teacherInfo.value.schedules
+    .filter(schedule => {
+      // 固定周期时间段（每周重复）
+      if (schedule.scheduleType === 1 && schedule.weekday === weekday) {
+        return true
+      }
+      
+      // 临时时间段（特定日期范围）
+      if (schedule.scheduleType === 2 && schedule.startDate && schedule.endDate) {
+        const startDate = schedule.startDate.split('T')[0]
+        const endDate = schedule.endDate.split('T')[0]
+        // 检查日期是否在范围内
+        if (dateStr >= startDate && dateStr <= endDate) {
+          // 检查星期几是否匹配
+          const scheduleDate = new Date(schedule.startDate)
+          const scheduleWeekday = scheduleDate.getDay() === 0 ? 7 : scheduleDate.getDay()
+          return scheduleWeekday === weekday
+        }
+      }
+      
+      return false
+    })
+    .sort((a, b) => {
+      // 按开始时间排序
+      return a.startTime.localeCompare(b.startTime)
+    })
+}
+
+// 格式化时间范围
+const formatTimeRange = (startTime, endTime) => {
+  if (!startTime || !endTime) return ''
+  // 从 "HH:mm:ss" 格式提取 "HH:mm"
+  const start = startTime.substring(0, 5)
+  const end = endTime.substring(0, 5)
+  return `${start} - ${end}`
+}
+
+// 格式化选中的日期
+const formatSelectedDate = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const month = date.getMonth() + 1
+  const day = date.getDate()
+  return `${month}月${day}日`
+}
+
+// 获取星期几名称
+const getWeekdayName = (dateStr) => {
+  if (!dateStr) return ''
+  const date = new Date(dateStr)
+  const weekday = date.getDay()
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  return weekdays[weekday]
 }
 
 const formatTime = (time) => {
@@ -453,47 +550,18 @@ onMounted(() => {
   font-size: 15px;
 }
 
-.certifications {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.cert-item {
-  display: flex;
-  gap: 16px;
-  padding: 16px;
-  background: #f9fafb;
-  border-radius: 16px;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.cert-item:hover {
-  background: #f3f4f6;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.cert-image {
-  width: 120px;
-  height: 120px;
-  border-radius: 12px;
-  flex-shrink: 0;
-  object-fit: cover;
-}
-
-.cert-info {
-  flex: 1;
-}
-
-.cert-info p {
-  margin: 8px 0;
-  color: #4b5563;
-  font-size: 14px;
-}
-
 .schedule-section {
   padding: 12px 0;
+}
+
+.schedule-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.calendar-wrapper {
+  width: 100%;
 }
 
 .calendar-cell {
@@ -502,17 +570,141 @@ onMounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.calendar-cell:hover {
+  background: #f3f4f6;
+}
+
+.calendar-cell.has-schedule {
+  cursor: pointer;
+}
+
+.calendar-cell.has-schedule:hover {
+  background: #eff6ff;
+}
+
+.calendar-cell.selected {
+  background: #3b82f6;
+  color: #ffffff;
+}
+
+.calendar-cell.selected .date-number {
+  color: #ffffff;
+  font-weight: 600;
 }
 
 .date-number {
   font-size: 14px;
+  color: #1a1a1a;
 }
 
-.available-mark {
-  font-size: 10px;
-  color: #10b981;
+.available-dot {
+  width: 6px;
+  height: 6px;
+  background: #10b981;
+  border-radius: 50%;
   margin-top: 4px;
+}
+
+.calendar-cell.selected .available-dot {
+  background: #ffffff;
+}
+
+.time-detail {
+  background: #f9fafb;
+  border-radius: 16px;
+  padding: 24px;
+  border: 2px solid #e5e7eb;
+}
+
+.detail-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.detail-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 4px 0;
+}
+
+.detail-subtitle {
+  font-size: 14px;
+  color: #6b7280;
+}
+
+.time-slots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.time-slot-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px 20px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.time-slot-item:hover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  transform: translateX(4px);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+}
+
+.time-icon {
+  font-size: 20px;
+  color: #3b82f6;
+}
+
+.time-range-text {
+  font-size: 16px;
   font-weight: 500;
+  color: #1a1a1a;
+}
+
+.no-time-slots {
+  padding: 20px 0;
+}
+
+.time-detail-placeholder {
+  background: #f9fafb;
+  border-radius: 16px;
+  padding: 40px 20px;
+  border: 2px dashed #d1d5db;
+  text-align: center;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .schedule-container {
+    gap: 16px;
+  }
+  
+  .time-detail {
+    padding: 16px;
+  }
+  
+  .detail-title {
+    font-size: 18px;
+  }
+  
+  .time-slot-item {
+    padding: 12px 16px;
+  }
 }
 
 .reviews-list {
