@@ -36,9 +36,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/api/auth/**",           // 认证相关接口
                         "/api/common/**",         // 公共接口
-                        "/swagger-ui/**",         // Swagger UI
-                        "/v3/api-docs/**",        // Swagger API 文档
                         "/doc.html",              // Knife4j 文档
+                        "/webjars/**",            // Knife4j 静态资源
+                        "/v3/api-docs/**",        // OpenAPI 文档
                         "/actuator/**",           // Actuator 监控
                         "/error",                 // 错误页面
                         "/favicon.ico"            // 图标
