@@ -22,6 +22,11 @@ public class AuthInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        // 处理 OPTIONS 预检请求（CORS）
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
+        
         // 获取 Token
         String token = request.getHeader(SystemConstant.TOKEN_HEADER);
         
