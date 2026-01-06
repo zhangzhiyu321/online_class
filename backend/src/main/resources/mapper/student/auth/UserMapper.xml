@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzy.backend.mapper.student.auth.UserMapper">
+
+    <!-- 用户结果映射 -->
+    <resultMap id="UserResultMap" type="com.zzy.backend.entity.user.User">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="nickname" column="nickname"/>
+        <result property="avatar" column="avatar"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="role" column="role"/>
+        <result property="status" column="status"/>
+        <result property="onlineStatus" column="online_status"/>
+        <result property="lastLoginAt" column="last_login_at"/>
+        <result property="lastLoginIp" column="last_login_ip"/>
+        <result property="extra" column="extra"/>
+        <result property="version" column="version"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <!-- 根据用户名查询用户 -->
+    <select id="selectByUsername" resultMap="UserResultMap">
+        SELECT *
+        FROM users
+        WHERE username = #{username}
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- 根据手机号查询用户 -->
+    <select id="selectByPhone" resultMap="UserResultMap">
+        SELECT *
+        FROM users
+        WHERE phone = #{phone}
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- 根据邮箱查询用户 -->
+    <select id="selectByEmail" resultMap="UserResultMap">
+        SELECT *
+        FROM users
+        WHERE email = #{email}
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- 插入用户 -->
+    <insert id="insert" parameterType="com.zzy.backend.entity.user.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (
+            username,
+            password,
+            nickname,
+            avatar,
+            phone,
+            email,
+            role,
+            status,
+            online_status,
+            version,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{username},
+            #{password},
+            #{nickname},
+            #{avatar},
+            #{phone},
+            #{email},
+            #{role},
+            #{status},
+            #{onlineStatus},
+            #{version},
+            #{createdAt},
+            #{updatedAt}
+        )
+    </insert>
+
+    <!-- 更新用户最后登录信息 -->
+    <update id="updateLastLogin">
+        UPDATE users
+        SET last_login_at = #{lastLoginAt},
+            last_login_ip = #{lastLoginIp},
+            updated_at = NOW()
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
+</mapper>
+
