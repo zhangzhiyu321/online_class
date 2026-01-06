@@ -1,0 +1,89 @@
+/**
+ * 列表页面统一样式
+ * 用于：找教师、预约、支付、消息等列表页面
+ */
+
+/* 页面容器 */
+.list-page-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* 页面标题区域 */
+.list-page-header {
+  margin-bottom: 20px;
+}
+
+.list-page-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+/* 筛选/搜索卡片 */
+.list-page-filter-card {
+  margin-bottom: 20px;
+  border-radius: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* 筛选内容区域 */
+.list-page-filter-content {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+/* 搜索内容区域 */
+.list-page-search-content {
+  display: flex;
+  justify-content: center;
+}
+
+/* 搜索输入框 */
+.list-page-search-input {
+  max-width: 400px;
+  width: 100%;
+}
+
+/* 列表容器 */
+.list-page-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 列表项卡片 */
+.list-page-item-card {
+  cursor: pointer;
+  transition: transform 0.3s, box-shadow 0.3s;
+  border-radius: 12px;
+}
+
+.list-page-item-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* 响应式设计 */
+@media (max-width: 767px) {
+  .list-page-container {
+    padding: 0 12px;
+  }
+  
+  .list-page-title {
+    font-size: 24px;
+  }
+  
+  .list-page-filter-card {
+    border-radius: 12px;
+  }
+  
+  .list-page-item-card {
+    border-radius: 8px;
+  }
+}
+

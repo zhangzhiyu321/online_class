@@ -1,16 +1,12 @@
 <template>
-  <div class="chat-list">
-    <div class="page-header">
-      <h1 class="page-title">消息</h1>
-    </div>
-
+  <div class="chat-list list-page-container">
     <!-- 搜索栏 -->
-    <el-card class="search-card">
+    <el-card class="list-page-filter-card">
       <el-input
         v-model="searchKeyword"
         placeholder="搜索聊天对象..."
         clearable
-        class="search-input"
+        class="list-page-search-input"
       >
         <template #prefix>
           <el-icon><Search /></el-icon>
@@ -18,11 +14,11 @@
       </el-input>
     </el-card>
 
-    <div class="chats-container">
+    <div class="chats-container list-page-list-container">
       <el-card
         v-for="chat in filteredChatList"
         :key="chat.relationshipId"
-        class="chat-item"
+        class="chat-item list-page-item-card"
         shadow="hover"
         @click="handleChatClick(chat)"
       >
@@ -68,16 +64,19 @@ import { useRouter, useRoute } from 'vue-router'
 import { getChatList, getUnreadCount } from '@/api/chat'
 import { User, Search, ChatDotRound } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-
+import { normalizeApiData, createSearchFilter } from '@/utils/dataHelper'
+import { useTimeFormatter } from '@/composables/useTimeFormatter'
 const router = useRouter()
 const route = useRoute()
+const { formatRelativeTime } = useTimeFormatter()
+
+const loading = ref(false)
 
 const chatList = ref([])
 const searchKeyword = ref('')
-const loading = ref(false)
 const totalUnreadCount = ref(0)
 let unreadTimer = null
-let previousUnreadCount = 0 // 记录上一次的未读数量，用于检测新消息
+let previousUnreadCount = 0 // 用于检测新消息通知
 
 const loadChatList = async (silent = false) => {
   if (!silent) {
@@ -85,50 +84,7 @@ const loadChatList = async (silent = false) => {
   }
   try {
     const data = await getChatList()
-    // 确保返回的是数组类型
-    if (Array.isArray(data)) {
-      chatList.value = data
-    } else if (data && Array.isArray(data.list)) {
-      chatList.value = data.list
-    } else {
-      chatList.value = []
-    }
-    
-    // 计算总未读消息数
-    const calculatedCount = chatList.value.reduce((sum, chat) => {
-      return sum + (chat.unreadCount || 0)
-    }, 0)
-    
-    // 检测是否有新消息（通过比较每个聊天的未读数）
-    if (!silent && previousUnreadCount > 0) {
-      chatList.value.forEach(chat => {
-        if (chat.unreadCount > 0) {
-          // 可以在这里添加更详细的通知逻辑
-        }
-      })
-    }
-    
-    totalUnreadCount.value = calculatedCount
-    
-    // 如果有 teacherId 参数，查找对应的聊天关系
-    const teacherId = route.query.teacherId
-    if (teacherId) {
-      const chat = chatList.value.find(c => c.otherUserId === parseInt(teacherId))
-      if (chat) {
-        // 找到聊天关系，跳转到聊天窗口
-        goToChat(chat.relationshipId)
-      } else {
-        // 如果聊天关系不存在，需要创建一个临时聊天关系或直接跳转到聊天窗口
-        // 由于后端会在发送第一条消息时自动创建聊天关系，我们可以直接跳转
-        // 但需要传递 teacherId 作为接收者ID
-        // 这里我们创建一个临时的 relationshipId（使用负数或特殊值），或者直接跳转到聊天窗口
-        // 实际上，更好的做法是创建一个接口来初始化聊天关系，但为了简化，我们直接跳转
-        // 前端会在 ChatWindow 中处理这种情况
-        ElMessage.info('正在打开聊天窗口...')
-        // 跳转到一个特殊的聊天窗口，使用 teacherId 作为参数
-        router.push(`/chat/new?teacherId=${teacherId}`)
-      }
-    }
+    chatList.value = normalizeApiData(data)
   } catch (error) {
     if (!silent) {
       ElMessage.error('加载聊天列表失败')
@@ -138,6 +94,23 @@ const loadChatList = async (silent = false) => {
   } finally {
     if (!silent) {
       loading.value = false
+    }
+  }
+  
+  // 计算总未读消息数
+  totalUnreadCount.value = chatList.value.reduce((sum, chat) => {
+    return sum + (chat.unreadCount || 0)
+  }, 0)
+    
+  // 如果有 teacherId 参数，查找对应的聊天关系
+  const teacherId = route.query.teacherId
+  if (teacherId) {
+    const chat = chatList.value.find(c => c.otherUserId === parseInt(teacherId))
+    if (chat) {
+      goToChat(chat.relationshipId)
+    } else {
+      ElMessage.info('正在打开聊天窗口...')
+      router.push(`/chat/new?teacherId=${teacherId}`)
     }
   }
 }
@@ -206,21 +179,8 @@ const getLastMessagePreview = (chat) => {
   return '消息'
 }
 
-const formatTime = (time) => {
-  if (!time) return ''
-  const date = new Date(time)
-  const now = new Date()
-  const diff = now - date
-  const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-  const days = Math.floor(diff / 86400000)
-
-  if (minutes < 1) return '刚刚'
-  if (minutes < 60) return `${minutes}分钟前`
-  if (hours < 24) return `${hours}小时前`
-  if (days < 7) return `${days}天前`
-  return date.toLocaleDateString('zh-CN')
-}
+// 使用统一的时间格式化函数
+const formatTime = formatRelativeTime
 
 const handleChatClick = (chat) => {
   if (chat && chat.relationshipId) {
@@ -241,19 +201,11 @@ const goToChat = (relationshipId) => {
 }
 
 const filteredChatList = computed(() => {
-  if (!Array.isArray(chatList.value)) {
-    return []
-  }
-  if (!searchKeyword.value) {
-    return chatList.value
-  }
-  const keyword = searchKeyword.value.toLowerCase()
-  return chatList.value.filter(chat => {
-    return (
-      (chat.otherUserName && chat.otherUserName.toLowerCase().includes(keyword)) ||
-      (chat.lastMessageContent && chat.lastMessageContent.toLowerCase().includes(keyword))
-    )
-  })
+  return createSearchFilter(
+    chatList.value,
+    searchKeyword.value,
+    ['otherUserName', 'lastMessageContent']
+  )
 })
 
 // 处理聊天已读事件
@@ -327,36 +279,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.chat-list {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.search-card {
-  margin-bottom: 20px;
-}
-
-.search-input {
-  max-width: 400px;
-  width: 100%;
-}
-
-.chats-container {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.chat-item {
-  cursor: pointer;
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.chat-item:hover {
-  transform: translateX(4px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
-
 .chat-content {
   display: flex;
   gap: 16px;
@@ -424,7 +346,6 @@ onUnmounted(() => {
   font-size: 11px;
 }
 
-/* 右下角总未读消息数浮动按钮 */
 .total-unread-badge {
   position: fixed;
   bottom: 80px;

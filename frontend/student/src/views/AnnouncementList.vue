@@ -1,7 +1,5 @@
 <template>
   <div class="announcement-list" v-loading="loading">
-    <h1 class="page-title">系统公告</h1>
-    
     <el-card 
       v-for="announcement in announcements" 
       :key="announcement.id"
@@ -143,13 +141,6 @@ onMounted(() => {
   padding: 24px;
 }
 
-.page-title {
-  font-size: 24px;
-  font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 24px;
-}
-
 .announcement-card {
   margin-bottom: 16px;
   border: 1px solid #e5e7eb;
@@ -220,10 +211,6 @@ onMounted(() => {
 @media (max-width: 767px) {
   .announcement-list {
     padding: 16px;
-  }
-  
-  .page-title {
-    font-size: 20px;
   }
   
   .card-header {

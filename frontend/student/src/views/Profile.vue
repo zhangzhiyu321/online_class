@@ -1,9 +1,5 @@
 <template>
   <div class="profile">
-    <div class="page-header">
-      <h1 class="page-title">个人中心</h1>
-    </div>
-
     <el-card class="profile-card">
       <div class="profile-header">
         <el-upload

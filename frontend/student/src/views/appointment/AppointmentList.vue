@@ -1,12 +1,8 @@
 <template>
-  <div class="appointment-list">
-    <div class="page-header">
-      <h1 class="page-title">我的预约</h1>
-    </div>
-
+  <div class="appointment-list list-page-container">
     <!-- 筛选栏 -->
-    <el-card class="filter-card">
-      <div class="filter-content">
+    <el-card class="list-page-filter-card">
+      <div class="list-page-filter-content">
         <el-radio-group v-model="statusFilter" @change="loadAppointments">
           <el-radio-button label="">全部</el-radio-button>
           <el-radio-button :label="1">待确认</el-radio-button>
@@ -15,13 +11,13 @@
           <el-radio-button :label="4">已取消</el-radio-button>
         </el-radio-group>
       </div>
-      <div class="search-content">
+      <div class="list-page-search-content">
         <el-input
           v-model="searchKeyword"
           placeholder="搜索教师姓名、科目名称..."
           clearable
           @input="handleSearch"
-          class="search-input"
+          class="list-page-search-input"
         >
           <template #prefix>
             <el-icon><Search /></el-icon>
@@ -31,11 +27,11 @@
     </el-card>
 
     <!-- 预约列表 -->
-    <div class="appointments">
+    <div class="appointments list-page-list-container">
       <el-card
         v-for="appointment in filteredAppointmentList"
         :key="appointment.id"
-        class="appointment-card"
+        class="appointment-card list-page-item-card"
         shadow="hover"
         @click="goToDetail(appointment.id)"
       >
@@ -43,10 +39,10 @@
           <div class="appointment-info">
             <h3 class="teacher-name">{{ appointment.teacherName }}</h3>
             <el-tag
-              :type="getStatusType(appointment.status)"
+              :type="getAppointmentStatusType(appointment.status)"
               size="small"
             >
-              {{ getStatusText(appointment.status) }}
+              {{ getAppointmentStatusText(appointment.status) }}
             </el-tag>
           </div>
           <div class="appointment-time">
@@ -106,9 +102,13 @@ import { useRouter } from 'vue-router'
 import { getAppointmentList, cancelAppointment } from '@/api/appointment'
 import { Calendar, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { normalizeApiData, createSearchFilter } from '@/utils/dataHelper'
+import { getStatusText, getStatusType } from '@/utils/statusHelper'
+import { useTimeFormatter } from '@/composables/useTimeFormatter'
 import '@/styles/appointment-buttons.css'
 
 const router = useRouter()
+const { formatDateTime } = useTimeFormatter()
 
 const appointmentList = ref([])
 const statusFilter = ref('')
@@ -126,14 +126,7 @@ const loadAppointments = async () => {
       params.keyword = searchKeyword.value
     }
     const data = await getAppointmentList(params)
-    // 确保返回的是数组类型
-    if (Array.isArray(data)) {
-      appointmentList.value = data
-    } else if (data && Array.isArray(data.list)) {
-      appointmentList.value = data.list
-    } else {
-      appointmentList.value = []
-    }
+    appointmentList.value = normalizeApiData(data)
   } catch (error) {
     ElMessage.error('加载预约列表失败')
     console.error(error)
@@ -143,52 +136,20 @@ const loadAppointments = async () => {
   }
 }
 
+// 使用统一的状态处理函数
+const getAppointmentStatusType = (status) => getStatusType('appointment', status)
+const getAppointmentStatusText = (status) => getStatusText('appointment', status)
+
 const filteredAppointmentList = computed(() => {
-  if (!Array.isArray(appointmentList.value)) {
-    return []
-  }
-  if (!searchKeyword.value) {
-    return appointmentList.value
-  }
-  const keyword = searchKeyword.value.toLowerCase()
-  return appointmentList.value.filter(appointment => {
-    return (
-      (appointment.teacherName && appointment.teacherName.toLowerCase().includes(keyword)) ||
-      (appointment.subjectName && appointment.subjectName.toLowerCase().includes(keyword)) ||
-      (appointment.remark && appointment.remark.toLowerCase().includes(keyword))
-    )
-  })
+  return createSearchFilter(
+    appointmentList.value,
+    searchKeyword.value,
+    ['teacherName', 'subjectName', 'remark']
+  )
 })
 
 const handleSearch = () => {
-  // 如果后端支持搜索，可以调用 loadAppointments
-  // 否则使用前端过滤（已通过 computed 实现）
-}
-
-const getStatusType = (status) => {
-  const types = {
-    1: 'warning', // 待确认
-    2: 'success', // 已确认
-    3: 'info', // 已完成
-    4: 'danger' // 已取消
-  }
-  return types[status] || 'info'
-}
-
-const getStatusText = (status) => {
-  const texts = {
-    1: '待确认',
-    2: '已确认',
-    3: '已完成',
-    4: '已取消'
-  }
-  return texts[status] || '未知'
-}
-
-const formatDateTime = (date, time) => {
-  if (!date) return ''
-  const dateStr = date.split('T')[0]
-  return `${dateStr} ${time || ''}`
+  // 前端过滤已通过 computed 实现
 }
 
 const goToDetail = (id) => {
@@ -229,46 +190,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.appointment-list {
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-.filter-card {
-  margin-bottom: 20px;
-}
-
-.filter-content {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 16px;
-}
-
-.search-content {
-  display: flex;
-  justify-content: center;
-}
-
-.search-input {
-  max-width: 400px;
-  width: 100%;
-}
-
-.appointments {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.appointment-card {
-  cursor: pointer;
-  transition: transform 0.3s, box-shadow 0.3s;
-}
-
-.appointment-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-}
 
 .appointment-header {
   display: flex;

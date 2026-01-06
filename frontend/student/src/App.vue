@@ -13,13 +13,8 @@
     appear: 初始渲染时也应用过渡动画
   -->
   <router-view v-slot="{ Component, route }">
-    <transition
-      :name="route.meta.transition || 'fade'"
-      mode="out-in"
-      appear
-    >
-      <component :is="Component" :key="route.path" />
-    </transition>
+    <!-- 移除过渡动画，页面直接显示 -->
+    <component :is="Component" :key="route.path" />
   </router-view>
 </template>
 
@@ -36,106 +31,8 @@
 </script>
 
 <style>
-/* ========== 全局样式重置 ========== */
-
-/* 全局样式重置（移除所有元素的默认margin和padding，统一使用border-box盒模型） */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-/* 应用根容器样式 */
-#app {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-    'Noto Color Emoji';
-  -webkit-font-smoothing: antialiased; /* 字体平滑（macOS/iOS） */
-  -moz-osx-font-smoothing: grayscale; /* 字体平滑（Firefox macOS） */
-  color: #2c3e50;
-  min-height: 100vh;
-}
-
-/* Body 样式重置 */
-body {
-  margin: 0;
-  padding: 0;
-}
-
-/* ========== 全局工具类样式 ========== */
-
-/* 容器工具类（最大宽度限制，居中显示） */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-/* 页面标题工具类 */
-.page-title {
-  font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 20px;
-  color: #303133;
-}
-
-/* 卡片工具类 */
-.card {
-  background: #fff;
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-}
-
-/* ========== 响应式工具类 ========== */
-
-/* 移动端样式（屏幕宽度 <= 767px） */
-@media (max-width: 767px) {
-  .page-title {
-    font-size: 20px;
-  }
-
-  .card {
-    padding: 16px;
-  }
-}
-
-/* ========== 路由过渡动画 ========== */
-
-/**
- * 淡入淡出过渡动画（fade）
- * 用于路由切换时的默认过渡效果
+/* 
+ * 注意：全局样式重置和基础样式已在 assets/main.css 中定义
+ * 已移除路由过渡动画，页面直接显示
  */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: opacity; /* 性能优化 */
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/**
- * 滑动过渡动画（slide）
- * 用于需要滑动效果的路由切换
- */
-.slide-enter-active,
-.slide-leave-active {
-  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: opacity, transform; /* 性能优化 */
-}
-
-.slide-enter-from {
-  opacity: 0;
-  transform: translateX(20px) translateZ(0); /* GPU加速 */
-}
-
-.slide-leave-to {
-  opacity: 0;
-  transform: translateX(-20px) translateZ(0); /* GPU加速 */
-}
 </style>
