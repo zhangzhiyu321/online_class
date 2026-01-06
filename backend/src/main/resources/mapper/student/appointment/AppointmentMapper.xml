@@ -95,5 +95,160 @@
           AND deleted_at IS NULL
     </select>
 
+    <!-- 预约列表项结果映射 -->
+    <resultMap id="AppointmentListItemResultMap" type="com.zzy.backend.dto.response.student.appointment.AppointmentListItemResponse">
+        <id property="id" column="id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="teacherId" column="teacher_id"/>
+        <result property="teacherName" column="teacher_name"/>
+        <result property="teacherAvatar" column="teacher_avatar"/>
+        <result property="subjectName" column="subject_name"/>
+        <result property="appointmentDate" column="appointment_date"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="duration" column="duration"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="status" column="status"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- 预约详情结果映射 -->
+    <resultMap id="AppointmentDetailResultMap" type="com.zzy.backend.dto.response.student.appointment.AppointmentDetailResponse">
+        <id property="id" column="id"/>
+        <result property="orderNo" column="order_no"/>
+        <result property="teacherId" column="teacher_id"/>
+        <result property="teacherName" column="teacher_name"/>
+        <result property="teacherAvatar" column="teacher_avatar"/>
+        <result property="teacherPhone" column="teacher_phone"/>
+        <result property="stageId" column="stage_id"/>
+        <result property="stageName" column="stage_name"/>
+        <result property="subjectId" column="subject_id"/>
+        <result property="subjectName" column="subject_name"/>
+        <result property="appointmentDate" column="appointment_date"/>
+        <result property="startTime" column="start_time"/>
+        <result property="endTime" column="end_time"/>
+        <result property="duration" column="duration"/>
+        <result property="pricePerHour" column="price_per_hour"/>
+        <result property="totalAmount" column="total_amount"/>
+        <result property="studentName" column="student_name"/>
+        <result property="studentGrade" column="student_grade"/>
+        <result property="studentPhone" column="student_phone"/>
+        <result property="remark" column="remark"/>
+        <result property="status" column="status"/>
+        <result property="cancelReason" column="cancel_reason"/>
+        <result property="dingtalkUrl" column="dingtalk_url"/>
+        <result property="confirmedAt" column="confirmed_at"/>
+        <result property="completedAt" column="completed_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- 查询预约列表 -->
+    <select id="selectAppointmentList" resultMap="AppointmentListItemResultMap">
+        SELECT
+            a.id,
+            a.order_no,
+            a.teacher_id,
+            COALESCE(u.nickname, u.username, tp.real_name, '未知教师') AS teacher_name,
+            u.avatar AS teacher_avatar,
+            s.name AS subject_name,
+            a.appointment_date,
+            a.start_time,
+            a.end_time,
+            a.duration,
+            a.total_amount,
+            a.status,
+            a.created_at
+        FROM appointments a
+        INNER JOIN users u ON a.teacher_id = u.id AND u.deleted_at IS NULL
+        LEFT JOIN teacher_profiles tp ON a.teacher_id = tp.user_id AND tp.deleted_at IS NULL
+        LEFT JOIN subjects s ON a.subject_id = s.id AND s.deleted_at IS NULL
+        WHERE a.student_id = #{studentId}
+          AND a.deleted_at IS NULL
+        <if test="status != null">
+            AND a.status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                COALESCE(u.nickname, u.username, tp.real_name, '') LIKE CONCAT('%', #{keyword}, '%')
+                OR s.name LIKE CONCAT('%', #{keyword}, '%')
+                OR a.remark LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        ORDER BY a.created_at DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 统计预约总数 -->
+    <select id="countAppointmentList" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM appointments a
+        INNER JOIN users u ON a.teacher_id = u.id AND u.deleted_at IS NULL
+        LEFT JOIN teacher_profiles tp ON a.teacher_id = tp.user_id AND tp.deleted_at IS NULL
+        LEFT JOIN subjects s ON a.subject_id = s.id AND s.deleted_at IS NULL
+        WHERE a.student_id = #{studentId}
+          AND a.deleted_at IS NULL
+        <if test="status != null">
+            AND a.status = #{status}
+        </if>
+        <if test="keyword != null and keyword != ''">
+            AND (
+                COALESCE(u.nickname, u.username, tp.real_name, '') LIKE CONCAT('%', #{keyword}, '%')
+                OR s.name LIKE CONCAT('%', #{keyword}, '%')
+                OR a.remark LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+    </select>
+
+    <!-- 查询预约详情 -->
+    <select id="selectAppointmentDetail" resultMap="AppointmentDetailResultMap">
+        SELECT
+            a.id,
+            a.order_no,
+            a.teacher_id,
+            COALESCE(u.nickname, u.username, tp.real_name, '未知教师') AS teacher_name,
+            u.avatar AS teacher_avatar,
+            u.phone AS teacher_phone,
+            a.stage_id,
+            ts.name AS stage_name,
+            a.subject_id,
+            s.name AS subject_name,
+            a.appointment_date,
+            a.start_time,
+            a.end_time,
+            a.duration,
+            a.price_per_hour,
+            a.total_amount,
+            a.student_name,
+            a.student_grade,
+            a.student_phone,
+            a.remark,
+            a.status,
+            a.cancel_reason,
+            a.dingtalk_url,
+            a.confirmed_at,
+            a.completed_at,
+            a.created_at
+        FROM appointments a
+        INNER JOIN users u ON a.teacher_id = u.id AND u.deleted_at IS NULL
+        LEFT JOIN teacher_profiles tp ON a.teacher_id = tp.user_id AND tp.deleted_at IS NULL
+        LEFT JOIN teaching_stages ts ON a.stage_id = ts.id AND ts.deleted_at IS NULL
+        LEFT JOIN subjects s ON a.subject_id = s.id AND s.deleted_at IS NULL
+        WHERE a.id = #{id}
+          AND a.student_id = #{studentId}
+          AND a.deleted_at IS NULL
+    </select>
+
+    <!-- 更新预约状态（取消预约） -->
+    <update id="updateAppointmentStatus">
+        UPDATE appointments
+        SET status = #{status},
+            cancel_reason = #{cancelReason},
+            cancel_by = #{cancelBy},
+            cancel_at = NOW(),
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </update>
+
 </mapper>
 
