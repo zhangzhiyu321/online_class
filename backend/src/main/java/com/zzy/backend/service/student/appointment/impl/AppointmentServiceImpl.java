@@ -1,13 +1,17 @@
 package com.zzy.backend.service.student.appointment.impl;
 
 import com.zzy.backend.common.exception.BusinessException;
+import com.zzy.backend.common.page.PageResult;
+import com.zzy.backend.dto.request.student.appointment.AppointmentListRequest;
+import com.zzy.backend.dto.request.student.appointment.CancelAppointmentRequest;
 import com.zzy.backend.dto.request.student.appointment.CreateAppointmentRequest;
+import com.zzy.backend.dto.response.student.appointment.AppointmentDetailResponse;
+import com.zzy.backend.dto.response.student.appointment.AppointmentListItemResponse;
 import com.zzy.backend.dto.response.student.appointment.CreateAppointmentResponse;
 import com.zzy.backend.entity.student.Appointment;
 import com.zzy.backend.mapper.student.appointment.AppointmentMapper;
 import com.zzy.backend.service.student.appointment.AppointmentService;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Random;
 
 /**
@@ -147,6 +152,78 @@ public class AppointmentServiceImpl implements AppointmentService {
             log.warn("金额验证: 计算金额={}, 提交金额={}, 差值={}", calculatedAmount, expectedAmount, Math.abs(calculatedAmount - expectedAmount));
             throw new BusinessException("总金额计算不正确，计算金额：" + String.format("%.2f", calculatedAmount) + "元，提交金额：" + String.format("%.2f", expectedAmount) + "元");
         }
+    }
+
+    @Override
+    public PageResult<AppointmentListItemResponse> getAppointmentList(AppointmentListRequest request, Long studentId) {
+        log.info("查询预约列表, studentId: {}, request: {}", studentId, request);
+
+        // 设置学生ID
+        request.setStudentId(studentId);
+        
+        // 验证并修正分页参数
+        request.validate();
+
+        // 查询预约列表
+        List<AppointmentListItemResponse> list = appointmentMapper.selectAppointmentList(request);
+
+        // 统计总数
+        Long total = appointmentMapper.countAppointmentList(request);
+
+        // 构建分页结果
+        return PageResult.of(list, total, request.getPage(), request.getPageSize());
+    }
+
+    @Override
+    public AppointmentDetailResponse getAppointmentDetail(Long id, Long studentId) {
+        log.info("查询预约详情, id: {}, studentId: {}", id, studentId);
+
+        AppointmentDetailResponse detail = appointmentMapper.selectAppointmentDetail(id, studentId);
+        if (detail == null) {
+            throw new BusinessException("预约不存在或无权限访问");
+        }
+
+        return detail;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean cancelAppointment(Long id, CancelAppointmentRequest request, Long studentId) {
+        log.info("取消预约, id: {}, studentId: {}, reason: {}", id, studentId, request.getReason());
+
+        // 1. 查询预约记录
+        Appointment appointment = appointmentMapper.selectById(id);
+        if (appointment == null) {
+            throw new BusinessException("预约不存在");
+        }
+
+        // 2. 验证权限（只能取消自己的预约）
+        if (!appointment.getStudentId().equals(studentId)) {
+            throw new BusinessException("无权限取消该预约");
+        }
+
+        // 3. 验证状态（只能取消待确认或已确认的预约）
+        if (appointment.getStatus() == 3) {
+            throw new BusinessException("已完成的预约不能取消");
+        }
+        if (appointment.getStatus() == 4) {
+            throw new BusinessException("该预约已被取消");
+        }
+
+        // 4. 更新预约状态
+        int result = appointmentMapper.updateAppointmentStatus(
+                id,
+                4, // 已取消
+                request.getReason(),
+                studentId
+        );
+
+        if (result <= 0) {
+            throw new BusinessException("取消预约失败");
+        }
+
+        log.info("预约取消成功, id: {}, orderNo: {}", id, appointment.getOrderNo());
+        return true;
     }
 
     /**

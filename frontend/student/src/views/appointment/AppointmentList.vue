@@ -71,24 +71,23 @@
         <div class="appointment-actions">
           <el-button
             v-if="appointment.status === 1 || appointment.status === 2"
-            type="danger"
             size="small"
+            class="appointment-btn appointment-btn-cancel"
             @click.stop="handleCancel(appointment)"
           >
             取消预约
           </el-button>
           <el-button
             v-if="appointment.status === 2"
-            type="primary"
             size="small"
+            class="appointment-btn appointment-btn-contact"
             @click.stop="goToChat(appointment.teacherId)"
           >
             联系教师
           </el-button>
           <el-button
-            type="primary"
-            text
             size="small"
+            class="appointment-btn appointment-btn-detail"
             @click.stop="goToDetail(appointment.id)"
           >
             查看详情
@@ -107,6 +106,7 @@ import { useRouter } from 'vue-router'
 import { getAppointmentList, cancelAppointment } from '@/api/appointment'
 import { Calendar, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import '@/styles/appointment-buttons.css'
 
 const router = useRouter()
 
@@ -201,14 +201,19 @@ const goToChat = (teacherId) => {
 
 const handleCancel = async (appointment) => {
   try {
-    await ElMessageBox.prompt('请输入取消原因', '取消预约', {
+    const { value } = await ElMessageBox.prompt('请输入取消原因', '取消预约', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       inputType: 'textarea',
-      inputPlaceholder: '请输入取消原因'
+      inputPlaceholder: '请输入取消原因',
+      inputValidator: (value) => {
+        if (!value || value.trim() === '') {
+          return '取消原因不能为空'
+        }
+        return true
+      }
     })
-    const reason = '用户取消' // 实际应该从输入框获取
-    await cancelAppointment(appointment.id, reason)
+    await cancelAppointment(appointment.id, value.trim())
     ElMessage.success('取消成功')
     loadAppointments()
   } catch (error) {
@@ -319,11 +324,7 @@ onMounted(() => {
   font-size: 16px;
 }
 
-.appointment-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-}
+/* 按钮样式已移至公共文件 @/styles/appointment-buttons.css */
 
 @media (max-width: 767px) {
   .appointment-header {
@@ -335,14 +336,6 @@ onMounted(() => {
   .appointment-details {
     flex-direction: column;
     gap: 12px;
-  }
-
-  .appointment-actions {
-    flex-direction: column;
-  }
-
-  .appointment-actions .el-button {
-    width: 100%;
   }
 }
 </style>

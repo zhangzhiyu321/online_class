@@ -15,12 +15,14 @@
         <el-tag
           :type="getStatusType(appointmentInfo.status)"
           size="large"
+          class="status-tag"
         >
           {{ getStatusText(appointmentInfo.status) }}
         </el-tag>
       </div>
 
-      <el-descriptions :column="2" border>
+      <!-- 桌面端使用 el-descriptions -->
+      <el-descriptions :column="2" border class="desktop-descriptions">
         <el-descriptions-item label="订单号">{{ appointmentInfo.orderNo }}</el-descriptions-item>
         <el-descriptions-item label="预约时间">
           {{ formatDateTime(appointmentInfo.appointmentDate, appointmentInfo.startTime) }}
@@ -46,31 +48,117 @@
         </el-descriptions-item>
       </el-descriptions>
 
-      <div class="actions">
+      <!-- 手机端使用自定义布局 -->
+      <div class="mobile-info">
+        <div class="info-section">
+          <div class="info-group">
+            <div class="info-item">
+              <span class="info-label">订单号</span>
+              <span class="info-value">{{ appointmentInfo.orderNo }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">预约时间</span>
+              <span class="info-value">{{ formatDateTime(appointmentInfo.appointmentDate, appointmentInfo.startTime) }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="section-title">课程信息</h3>
+          <div class="info-group">
+            <div class="info-item">
+              <span class="info-label">教师</span>
+              <span class="info-value">{{ appointmentInfo.teacherName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">教学阶段</span>
+              <span class="info-value">{{ appointmentInfo.stageName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">科目</span>
+              <span class="info-value">{{ appointmentInfo.subjectName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">课程时长</span>
+              <span class="info-value">{{ appointmentInfo.duration }}分钟</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="section-title">费用信息</h3>
+          <div class="info-group">
+            <div class="info-item">
+              <span class="info-label">课时单价</span>
+              <span class="info-value">¥{{ appointmentInfo.pricePerHour }}/小时</span>
+            </div>
+            <div class="info-item highlight">
+              <span class="info-label">总金额</span>
+              <span class="info-value amount">¥{{ appointmentInfo.totalAmount }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3 class="section-title">学生信息</h3>
+          <div class="info-group">
+            <div class="info-item">
+              <span class="info-label">学生姓名</span>
+              <span class="info-value">{{ appointmentInfo.studentName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">学生年级</span>
+              <span class="info-value">{{ appointmentInfo.studentGrade }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">联系方式</span>
+              <span class="info-value">{{ appointmentInfo.studentPhone }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="info-section" v-if="appointmentInfo.remark">
+          <h3 class="section-title">备注信息</h3>
+          <div class="remark-content">{{ appointmentInfo.remark }}</div>
+        </div>
+
+        <div class="info-section" v-if="appointmentInfo.dingtalkUrl">
+          <h3 class="section-title">会议链接</h3>
+          <el-link :href="appointmentInfo.dingtalkUrl" target="_blank" type="primary" class="meeting-link">
+            {{ appointmentInfo.dingtalkUrl }}
+          </el-link>
+        </div>
+      </div>
+
+      <div class="appointment-actions">
         <el-button
           v-if="appointmentInfo.status === 1 || appointmentInfo.status === 2"
-          type="danger"
+          size="small"
+          class="appointment-btn appointment-btn-cancel"
           @click="handleCancel"
         >
           取消预约
         </el-button>
         <el-button
           v-if="appointmentInfo.status === 2"
-          type="primary"
+          size="small"
+          class="appointment-btn appointment-btn-contact"
           @click="goToChat"
         >
           联系教师
         </el-button>
         <el-button
           v-if="appointmentInfo.status === 3 && !appointmentInfo.hasReview"
-          type="primary"
+          size="small"
+          class="appointment-btn appointment-btn-payment"
           @click="goToPayment"
         >
           去支付
         </el-button>
         <el-button
           v-if="appointmentInfo.status === 3 && appointmentInfo.hasPayment && !appointmentInfo.hasReview"
-          type="success"
+          size="small"
+          class="appointment-btn appointment-btn-review"
           @click="goToReview"
         >
           去评价
@@ -86,6 +174,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getAppointmentDetail, cancelAppointment } from '@/api/appointment'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import '@/styles/appointment-buttons.css'
 
 const route = useRoute()
 const router = useRouter()
@@ -135,13 +224,19 @@ const formatDateTime = (date, time) => {
 
 const handleCancel = async () => {
   try {
-    await ElMessageBox.prompt('请输入取消原因', '取消预约', {
+    const { value } = await ElMessageBox.prompt('请输入取消原因', '取消预约', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
-      inputType: 'textarea'
+      inputType: 'textarea',
+      inputPlaceholder: '请输入取消原因',
+      inputValidator: (value) => {
+        if (!value || value.trim() === '') {
+          return '取消原因不能为空'
+        }
+        return true
+      }
     })
-    const reason = '用户取消'
-    await cancelAppointment(appointmentId.value, reason)
+    await cancelAppointment(appointmentId.value, value.trim())
     ElMessage.success('取消成功')
     loadDetail()
   } catch (error) {
@@ -191,15 +286,18 @@ onMounted(() => {
   border-radius: 20px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  padding: 24px;
 }
 
 .detail-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f3f4f6;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 16px;
 }
 
 .detail-header h2 {
@@ -210,50 +308,145 @@ onMounted(() => {
   letter-spacing: -0.5px;
 }
 
+.status-tag {
+  border-radius: 12px;
+  padding: 6px 16px;
+  font-weight: 500;
+}
+
 .amount {
   color: #ef4444;
-  font-weight: 600;
-  font-size: 20px;
+  font-weight: 700;
+  font-size: 22px;
 }
 
-.actions {
-  margin-top: 24px;
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
+/* 按钮样式已移至公共文件 @/styles/appointment-buttons.css */
+.appointment-actions {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 2px solid #f3f4f6;
 }
 
-.actions .el-button {
-  border-radius: 12px;
-  padding: 10px 20px;
-  font-weight: 500;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+/* 桌面端描述列表样式 */
+.desktop-descriptions {
+  display: block;
 }
 
-.actions .el-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-/* 优化描述列表样式 */
-:deep(.el-descriptions) {
+:deep(.desktop-descriptions .el-descriptions) {
   border-radius: 16px;
   overflow: hidden;
 }
 
-:deep(.el-descriptions__label) {
+:deep(.desktop-descriptions .el-descriptions__label) {
   font-weight: 600;
   color: #374151;
   background: #f9fafb;
+  font-size: 14px;
+  padding: 16px 20px;
 }
 
-:deep(.el-descriptions__content) {
+:deep(.desktop-descriptions .el-descriptions__content) {
   color: #4b5563;
+  font-size: 14px;
+  padding: 16px 20px;
 }
 
-:deep(.el-descriptions__table) {
+:deep(.desktop-descriptions .el-descriptions__table) {
   border-radius: 16px;
+}
+
+/* 手机端自定义布局 */
+.mobile-info {
+  display: none;
+}
+
+/* 信息区块 */
+.info-section {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 12px;
+}
+
+.info-section:last-child {
+  margin-bottom: 0;
+}
+
+.section-title {
+  margin: 0 0 16px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.info-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-item.highlight {
+  background: #ffffff;
+  padding: 16px;
+  border-radius: 8px;
+  border: 2px solid #fef0f0;
+  margin-top: 8px;
+}
+
+.info-label {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+  flex-shrink: 0;
+  min-width: 80px;
+}
+
+.info-value {
+  font-size: 15px;
+  color: #1a1a1a;
+  font-weight: 500;
+  text-align: right;
+  flex: 1;
+}
+
+.info-value.amount {
+  color: #ef4444;
+  font-weight: 700;
+  font-size: 20px;
+}
+
+.remark-content {
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 8px;
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.meeting-link {
+  display: block;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 8px;
+  font-size: 14px;
+  word-break: break-all;
 }
 
 /* 响应式设计 */
@@ -261,39 +454,86 @@ onMounted(() => {
   .appointment-detail {
     padding: 0 12px;
   }
+
+  .detail-card {
+    padding: 20px;
+  }
 }
 
 @media (max-width: 767px) {
   .appointment-detail {
-    padding: 0 12px;
+    padding: 0;
+  }
+
+  .back-button {
+    margin: 12px 16px;
+  }
+
+  .detail-card {
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 20px 16px;
   }
 
   .detail-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
 
   .detail-header h2 {
-    font-size: 24px;
+    font-size: 22px;
   }
 
-  .actions {
-    flex-direction: column;
-    width: 100%;
+  .status-tag {
+    font-size: 13px;
+    padding: 4px 12px;
   }
 
-  .actions .el-button {
-    width: 100%;
+  /* 隐藏桌面端描述列表 */
+  .desktop-descriptions {
+    display: none;
   }
 
-  :deep(.el-descriptions) {
+  /* 显示手机端布局 */
+  .mobile-info {
+    display: block;
+  }
+
+  .info-section {
+    margin-bottom: 16px;
+    padding: 16px;
+  }
+
+  .section-title {
+    font-size: 15px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+  }
+
+  .info-item {
+    padding: 10px 0;
+  }
+
+  .info-label {
+    font-size: 13px;
+    min-width: 70px;
+  }
+
+  .info-value {
     font-size: 14px;
   }
 
-  :deep(.el-descriptions__label) {
-    width: 100px;
-    font-size: 13px;
+  .info-value.amount {
+    font-size: 18px;
+  }
+
+  .appointment-actions {
+    margin-top: 24px;
+    padding-top: 20px;
   }
 }
 
@@ -302,19 +542,25 @@ onMounted(() => {
     font-size: 20px;
   }
 
-  .amount {
-    font-size: 18px;
+  .info-section {
+    padding: 12px;
   }
 
-  :deep(.el-descriptions__table) {
-    display: block;
+  .section-title {
+    font-size: 14px;
   }
 
-  :deep(.el-descriptions__label),
-  :deep(.el-descriptions__content) {
-    display: block;
-    width: 100%;
-    text-align: left;
+  .info-label {
+    font-size: 12px;
+    min-width: 60px;
+  }
+
+  .info-value {
+    font-size: 13px;
+  }
+
+  .info-value.amount {
+    font-size: 16px;
   }
 }
 </style>

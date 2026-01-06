@@ -1,0 +1,115 @@
+/* 预约相关按钮统一样式 */
+
+/* 按钮基础样式 */
+.appointment-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* 取消预约按钮 */
+.appointment-btn-cancel,
+.appointment-btn-cancel :deep(.el-button__inner) {
+  background-color: #fef0f0 !important;
+  border-color: #fde2e2 !important;
+  color: #f56c6c !important;
+}
+
+.appointment-btn-cancel:hover,
+.appointment-btn-cancel:hover :deep(.el-button__inner) {
+  background-color: #fde2e2 !important;
+  border-color: #fbc4c4 !important;
+  color: #f56c6c !important;
+}
+
+/* 查看详情按钮 */
+.appointment-btn-detail,
+.appointment-btn-detail :deep(.el-button__inner) {
+  background-color: #ecf5ff !important;
+  border-color: #b3d8ff !important;
+  color: #409eff !important;
+}
+
+.appointment-btn-detail:hover,
+.appointment-btn-detail:hover :deep(.el-button__inner) {
+  background-color: #d9ecff !important;
+  border-color: #a0cfff !important;
+  color: #409eff !important;
+}
+
+/* 联系教师按钮 */
+.appointment-btn-contact,
+.appointment-btn-contact :deep(.el-button__inner) {
+  background-color: #ecf5ff !important;
+  border-color: #b3d8ff !important;
+  color: #409eff !important;
+}
+
+.appointment-btn-contact:hover,
+.appointment-btn-contact:hover :deep(.el-button__inner) {
+  background-color: #d9ecff !important;
+  border-color: #a0cfff !important;
+  color: #409eff !important;
+}
+
+/* 去支付按钮 */
+.appointment-btn-payment,
+.appointment-btn-payment :deep(.el-button__inner) {
+  background-color: #ecf5ff !important;
+  border-color: #b3d8ff !important;
+  color: #409eff !important;
+}
+
+.appointment-btn-payment:hover,
+.appointment-btn-payment:hover :deep(.el-button__inner) {
+  background-color: #d9ecff !important;
+  border-color: #a0cfff !important;
+  color: #409eff !important;
+}
+
+/* 去评价按钮 */
+.appointment-btn-review,
+.appointment-btn-review :deep(.el-button__inner) {
+  background-color: #f0f9ff !important;
+  border-color: #bae6fd !important;
+  color: #0ea5e9 !important;
+}
+
+.appointment-btn-review:hover,
+.appointment-btn-review:hover :deep(.el-button__inner) {
+  background-color: #e0f2fe !important;
+  border-color: #7dd3fc !important;
+  color: #0ea5e9 !important;
+}
+
+/* 按钮容器样式 */
+.appointment-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* 响应式设计 - 手机端 */
+@media (max-width: 767px) {
+  .appointment-actions {
+    flex-direction: row;
+    justify-content: space-between;
+    width: 100%;
+    gap: 12px;
+  }
+
+  .appointment-btn-cancel,
+  .appointment-btn-detail,
+  .appointment-btn-contact,
+  .appointment-btn-payment,
+  .appointment-btn-review {
+    flex: 1;
+    min-width: 0;
+    text-align: center;
+  }
+}
+
