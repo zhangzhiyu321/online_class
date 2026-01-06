@@ -1,39 +1,34 @@
 <template>
   <div class="home-view">
-    <!-- 欢迎区域 - Calendly 风格 -->
-    <transition name="fade-up" appear>
-      <div class="welcome-section">
-        <h1 class="welcome-title">欢迎使用线上家教系统</h1>
-        <p class="welcome-subtitle">选择您需要的功能，开始您的学习之旅</p>
-      </div>
-    </transition>
+    <!-- 欢迎区域 -->
+    <div class="welcome-section">
+      <h1 class="welcome-title">欢迎使用线上家教系统</h1>
+      <p class="welcome-subtitle">选择您需要的功能，开始您的学习之旅</p>
+    </div>
 
-    <!-- 功能卡片网格 - 带延迟动画 -->
+    <!-- 功能卡片网格 -->
     <div class="page-links">
-      <transition-group name="card" appear>
-        <div
-          v-for="(page, index) in pages"
-          :key="page.path"
-          class="page-card"
-          :style="{ '--delay': index * 0.05 + 's' }"
-          @click="goToPage(page.path)"
-        >
-          <div class="card-content">
-            <div class="page-icon-wrapper">
-              <el-icon :size="28" class="page-icon">
-                <component :is="page.icon" />
-              </el-icon>
-            </div>
-            <div class="page-info">
-              <h3 class="page-title">{{ page.title }}</h3>
-              <p class="page-description">{{ page.description }}</p>
-            </div>
-            <div class="card-arrow">
-              <el-icon :size="20"><ArrowRight /></el-icon>
-            </div>
+      <div
+        v-for="page in pages"
+        :key="page.path"
+        class="page-card"
+        @click="goToPage(page.path)"
+      >
+        <div class="card-content">
+          <div class="page-icon-wrapper">
+            <el-icon :size="28" class="page-icon">
+              <component :is="page.icon" />
+            </el-icon>
+          </div>
+          <div class="page-info">
+            <h3 class="page-title">{{ page.title }}</h3>
+            <p class="page-description">{{ page.description }}</p>
+          </div>
+          <div class="card-arrow">
+            <el-icon :size="20"><ArrowRight /></el-icon>
           </div>
         </div>
-      </transition-group>
+      </div>
     </div>
   </div>
 </template>
@@ -264,35 +259,7 @@ const goToPage = (path) => {
   color: #667eea;
 }
 
-/* 淡入向上动画 - 缩短到0.2s，性能优化 */
-.fade-up-enter-active {
-  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: opacity, transform;
-}
-
-.fade-up-enter-from {
-  opacity: 0;
-  transform: translateY(20px) translateZ(0);
-}
-
-/* 卡片进入动画 - 缩短到0.2s，性能优化 */
-.card-enter-active {
-  transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-              transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  transition-delay: var(--delay);
-  will-change: opacity, transform;
-}
-
-.card-enter-from {
-  opacity: 0;
-  transform: translateY(30px) scale(0.95) translateZ(0);
-}
-
-.card-move {
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
-}
+/* 已移除淡入和卡片进入动画，内容直接显示 */
 
 /* 响应式设计 */
 @media (max-width: 1024px) {

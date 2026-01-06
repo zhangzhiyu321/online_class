@@ -1,9 +1,5 @@
 <template>
   <div class="refund-list">
-    <div class="page-header">
-      <h1 class="page-title">退款记录</h1>
-    </div>
-
     <el-card class="filter-card">
       <el-tabs v-model="activeStatus" @tab-change="handleStatusChange">
         <el-tab-pane label="全部" name="all" />
@@ -150,16 +146,6 @@ onMounted(() => {
 .refund-list {
   max-width: 1200px;
   margin: 0 auto;
-}
-
-.page-header {
-  margin-bottom: 20px;
-}
-
-.page-title {
-  font-size: 24px;
-  font-weight: bold;
-  color: #303133;
 }
 
 .filter-card {

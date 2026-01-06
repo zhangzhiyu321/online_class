@@ -128,46 +128,8 @@ body {
   background: #a8a8a8;
 }
 
-/* ========== Calendly 风格动画和过渡效果（优化：缩短时间） ========== */
-
-/* 页面过渡动画 - 缩短到0.15s */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-/* 滑动过渡动画 - 缩短到0.15s */
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide-enter-from {
-  transform: translateX(-20px);
-  opacity: 0;
-}
-
-.slide-leave-to {
-  transform: translateX(20px);
-  opacity: 0;
-}
-
-/* 缩放过渡动画 - 缩短到0.15s */
-.scale-enter-active,
-.scale-leave-active {
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.scale-enter-from,
-.scale-leave-to {
-  transform: scale(0.95);
-  opacity: 0;
-}
+/* ========== 已移除页面过渡动画，确保页面直接显示 ========== */
+/* 所有页面切换和元素加载都直接显示，无淡入淡出效果 */
 
 /* 按钮点击波纹效果 */
 @keyframes ripple {
@@ -570,7 +532,7 @@ body {
   -webkit-backdrop-filter: var(--glass-backdrop) !important;
 }
 
-/* 卡片圆角优化 - iOS 16 毛玻璃效果 */
+/* 卡片圆角优化 - iOS 16 毛玻璃效果 - 禁用进入动画，立即显示 */
 .el-card {
   border-radius: 20px !important;
   overflow: hidden !important;
@@ -580,6 +542,15 @@ body {
   border: 1px solid var(--glass-border) !important;
   box-shadow: var(--glass-shadow) !important;
   will-change: transform;
+  /* 禁用所有进入动画 */
+  animation: none !important;
+}
+
+/* 确保卡片内容立即显示 */
+.el-card__body {
+  transition: none !important;
+  animation: none !important;
+  opacity: 1 !important;
 }
 
 .el-card__header {
@@ -827,6 +798,25 @@ body {
   color: #409eff;
 }
 
+/* 单选按钮组 - 禁用过渡动画，确保立即显示 */
+.el-radio-group {
+  transition: none !important;
+}
+
+.el-radio-button {
+  transition: none !important;
+}
+
+.el-radio-button__inner {
+  transition: none !important;
+  animation: none !important;
+}
+
+.el-radio-button__original-radio:checked + .el-radio-button__inner {
+  transition: none !important;
+  animation: none !important;
+}
+
 /* 统一输入框 append 中按钮的边框样式 - 确保与独立按钮一致 */
 .el-input-group__append .el-button,
 .el-input-group__prepend .el-button {
@@ -852,9 +842,18 @@ body {
   box-shadow: var(--glass-shadow) !important;
 }
 
-/* 标签圆角优化 */
+/* 标签圆角优化 - 禁用所有过渡动画，确保立即显示 */
 .el-tag {
   border-radius: 12px !important;
+  transition: none !important;
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+/* 确保标签在条件渲染时立即显示 */
+.el-tag[style*="display"] {
+  transition: none !important;
+  animation: none !important;
 }
 
 /* 徽章圆角优化 */

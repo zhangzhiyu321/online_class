@@ -2,7 +2,6 @@
   <div class="notification-list">
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">通知中心</h1>
         <el-badge :value="unreadCount" :hidden="unreadCount === 0" class="badge">
           <span></span>
         </el-badge>
@@ -263,13 +262,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-}
-
-.page-title {
-  font-size: 24px;
-  font-weight: bold;
-  color: #303133;
-  margin: 0;
 }
 
 .filter-card {

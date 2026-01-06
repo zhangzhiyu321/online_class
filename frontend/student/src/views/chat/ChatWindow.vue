@@ -948,7 +948,7 @@ onMounted(async () => {
   height: 100%;
   min-height: 0;
   position: relative;
-  overflow: hidden;
+  max-height: 100vh;
 }
 
 .chat-header {
@@ -1383,6 +1383,7 @@ onMounted(async () => {
   flex-shrink: 0;
   position: relative;
   z-index: 10;
+  width: 100%;
 }
 
 /* 加号按钮样式 */
@@ -1519,6 +1520,30 @@ onMounted(async () => {
 
 /* 移动端优化 */
 @media (max-width: 767px) {
+  .chat-window {
+    height: 100vh;
+    height: -webkit-fill-available; /* iOS Safari */
+  }
+
+  .chat-container {
+    height: 100%;
+    max-height: 100vh;
+    max-height: -webkit-fill-available; /* iOS Safari */
+  }
+
+  .input-area {
+    position: relative;
+    flex-shrink: 0;
+    background: #fff;
+    width: 100%;
+  }
+
+  .messages-container {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
   .input-box {
     padding: 8px 12px;
   }
@@ -1537,11 +1562,15 @@ onMounted(async () => {
 @media (max-width: 767px) {
   .chat-window {
     height: 100vh;
+    height: -webkit-fill-available; /* iOS Safari */
     padding: 0;
   }
 
   .chat-container {
     border-radius: 16px;
+    height: 100%;
+    max-height: 100vh;
+    max-height: -webkit-fill-available; /* iOS Safari */
   }
 
   .chat-header {
@@ -1598,7 +1627,8 @@ onMounted(async () => {
 
 @media (max-width: 480px) {
   .chat-window {
-    height: calc(100vh - 200px);
+    height: 100vh;
+    height: -webkit-fill-available; /* iOS Safari */
   }
 
   .message-voice {

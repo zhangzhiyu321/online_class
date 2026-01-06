@@ -1,63 +1,58 @@
 <template>
   <div class="create-appointment" v-loading="loading">
     <!-- 返回按钮 -->
-    <transition name="fade">
-      <el-button
-        type="text"
-        :icon="ArrowLeft"
-        @click="$router.back()"
-        class="back-button"
-      >
-        返回
-      </el-button>
-    </transition>
+    <el-button
+      type="text"
+      :icon="ArrowLeft"
+      @click="$router.back()"
+      class="back-button"
+    >
+      返回
+    </el-button>
 
     <!-- 主容器 -->
     <div class="appointment-container">
       <!-- 教师信息和步骤指示器合并 -->
-      <transition name="fade-up" appear>
-        <el-card class="header-card" shadow="never">
-          <div class="header-content">
-            <!-- 教师信息 -->
-            <div v-if="teacherInfo" class="teacher-info-compact">
-              <el-avatar :src="teacherInfo.avatar" :size="48" class="teacher-avatar" />
-              <div class="teacher-details-compact">
-                <h3 class="teacher-name-compact">{{ teacherInfo.nickname || teacherInfo.realName }}</h3>
-                <div class="teacher-rating-compact">
-                  <el-rate
-                    v-model="teacherInfo.rating"
-                    disabled
-                    size="small"
-                    text-color="#ff9900"
-                  />
-                  <span class="rating-text-compact">{{ teacherInfo.rating || 0 }}.0</span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- 步骤指示器 -->
-            <div class="steps-indicator-compact">
-              <div
-                v-for="(step, index) in steps"
-                :key="index"
-                class="step-item-compact"
-                :class="{ active: currentStep === index, completed: currentStep > index }"
-              >
-                <div class="step-number-compact">
-                  <el-icon v-if="currentStep > index"><Check /></el-icon>
-                  <span v-else>{{ index + 1 }}</span>
-                </div>
-                <span class="step-label-compact">{{ step.label }}</span>
-                <div class="step-line-compact" v-if="index < steps.length - 1"></div>
+      <el-card class="header-card" shadow="never">
+        <div class="header-content">
+          <!-- 教师信息 -->
+          <div v-if="teacherInfo" class="teacher-info-compact">
+            <el-avatar :src="teacherInfo.avatar" :size="48" class="teacher-avatar" />
+            <div class="teacher-details-compact">
+              <h3 class="teacher-name-compact">{{ teacherInfo.nickname || teacherInfo.realName }}</h3>
+              <div class="teacher-rating-compact">
+                <el-rate
+                  v-model="teacherInfo.rating"
+                  disabled
+                  size="small"
+                  text-color="#ff9900"
+                />
+                <span class="rating-text-compact">{{ teacherInfo.rating || 0 }}.0</span>
               </div>
             </div>
           </div>
-        </el-card>
-      </transition>
+          
+          <!-- 步骤指示器 -->
+          <div class="steps-indicator-compact">
+            <div
+              v-for="(step, index) in steps"
+              :key="index"
+              class="step-item-compact"
+              :class="{ active: currentStep === index, completed: currentStep > index }"
+            >
+              <div class="step-number-compact">
+                <el-icon v-if="currentStep > index"><Check /></el-icon>
+                <span v-else>{{ index + 1 }}</span>
+              </div>
+              <span class="step-label-compact">{{ step.label }}</span>
+              <div class="step-line-compact" v-if="index < steps.length - 1"></div>
+            </div>
+          </div>
+        </div>
+      </el-card>
 
       <!-- 表单卡片 -->
-      <transition name="slide" mode="out-in">
-        <el-card :key="currentStep" class="form-card" shadow="never">
+      <el-card :key="currentStep" class="form-card" shadow="never">
           <!-- 步骤 1: 选择课程信息 -->
           <div v-if="currentStep === 0" class="step-content">
             <h2 class="step-title">选择课程信息</h2>
@@ -250,7 +245,6 @@
             </el-form>
           </div>
         </el-card>
-      </transition>
     </div>
   </div>
 </template>
@@ -795,39 +789,7 @@ onMounted(() => {
 }
 
 /* 动画效果 - 缩短时间 */
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-
-.fade-up-enter-active {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.fade-up-enter-from {
-  opacity: 0;
-  transform: translateY(20px);
-}
-
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.slide-enter-from {
-  opacity: 0;
-  transform: translateX(30px);
-}
-
-.slide-leave-to {
-  opacity: 0;
-  transform: translateX(-30px);
-}
+/* 已移除所有过渡动画，内容直接显示 */
 
 /* ========== 响应式设计 ========== */
 

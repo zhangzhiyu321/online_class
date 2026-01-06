@@ -8,15 +8,10 @@
   5. 点击教师卡片跳转到详情页
 -->
 <template>
-  <div class="teacher-list">
-    <!-- 页面标题 -->
-    <div class="page-header">
-      <h1 class="page-title">找教师</h1>
-    </div>
-
+  <div class="teacher-list list-page-container">
     <!-- 搜索和筛选栏 -->
     <div class="filter-bar">
-      <el-card class="filter-card">
+      <el-card class="list-page-filter-card">
         <div class="filter-content">
           <!-- 搜索框 -->
           <div class="search-box">
@@ -222,6 +217,7 @@ import { useRouter } from 'vue-router'
 import { getTeacherList } from '@/api/teacher'
 import { getTeachingStages, getSubjects } from '@/api/common'
 import { Search, User, ArrowDown, Close, Loading } from '@element-plus/icons-vue'
+import { normalizeApiData } from '@/utils/dataHelper'
 
 // ========== 路由和基础设置 ==========
 const router = useRouter() // Vue Router 实例，用于页面跳转
@@ -329,14 +325,7 @@ const ratingOptions = [
 const loadTeachingStages = async () => {
   try {
     const data = await getTeachingStages()
-    // 处理不同格式的API返回数据（可能是数组，也可能是包含list属性的对象）
-    if (Array.isArray(data)) {
-      teachingStages.value = data
-    } else if (data && Array.isArray(data.list)) {
-      teachingStages.value = data.list
-    } else {
-      teachingStages.value = []
-    }
+    teachingStages.value = normalizeApiData(data)
   } catch (error) {
     console.error('加载教学阶段失败:', error)
     teachingStages.value = []
@@ -350,14 +339,7 @@ const loadTeachingStages = async () => {
 const loadSubjects = async () => {
   try {
     const data = await getSubjects()
-    // 处理不同格式的API返回数据（可能是数组，也可能是包含list属性的对象）
-    if (Array.isArray(data)) {
-      subjects.value = data
-    } else if (data && Array.isArray(data.list)) {
-      subjects.value = data.list
-    } else {
-      subjects.value = []
-    }
+    subjects.value = normalizeApiData(data)
   } catch (error) {
     console.error('加载科目失败:', error)
     subjects.value = []
@@ -398,13 +380,8 @@ const loadTeacherList = async (reset = false) => {
     // 调用API获取教师列表
     const data = await getTeacherList(params)
     
-    // 处理不同格式的API返回数据
-    let list = []
-    if (Array.isArray(data)) {
-      list = data
-    } else if (data && Array.isArray(data.list)) {
-      list = data.list
-    }
+    // 标准化API返回数据
+    const list = normalizeApiData(data)
     // 获取总数（用于判断是否还有更多数据）
     const total = (data && typeof data.total === 'number') ? data.total : list.length
 
@@ -597,32 +574,8 @@ onUnmounted(() => {
 /* 教师列表页面容器
  * 限制最大宽度，居中显示
  */
-.teacher-list {
-  max-width: var(--container-max-width-desktop, 1200px);
-  margin: 0 auto;
-}
-
-/* 页面标题区域 */
-.page-header {
-  margin-bottom: var(--spacing-lg, 20px);
-}
-
-/* 页面标题文字样式 */
-.page-title {
-  font-size: var(--font-size-h2, 24px);
-  font-weight: bold;
-  color: #303133;
-}
-
-/* ========== 搜索和筛选区域样式 ========== */
-
 /* 筛选栏容器 */
 .filter-bar {
-  margin-bottom: var(--spacing-lg, 20px);
-}
-
-/* 筛选卡片容器 */
-.filter-card {
   margin-bottom: var(--spacing-lg, 20px);
 }
 
@@ -646,24 +599,32 @@ onUnmounted(() => {
   flex: 1;
 }
 
-/* 搜索输入框边框圆角统一为 12px */
+/* 搜索输入框边框圆角统一为 12px，统一高度 */
 .search-box .el-input__wrapper {
   border-radius: 12px !important;
+  min-height: 36px !important;
 }
 
-/* 搜索按钮样式（不缩放，圆角统一为 12px） */
+/* 搜索输入框内部元素对齐 */
+.search-box :deep(.el-input__inner) {
+  height: 36px;
+  line-height: 36px;
+}
+
+/* 搜索按钮样式（不缩放，圆角统一为 12px，统一高度） */
 .search-button {
   flex-shrink: 0;
   border-radius: 12px !important;
+  height: 36px !important;
+  padding: 0 16px;
 }
 
 /* 筛选选项容器（水平布局，所有筛选下拉框和重置按钮并排显示） */
 .filter-options {
   display: flex;
-  flex-wrap: nowrap; /* 防止换行，保持在同一行 */
+  flex-wrap: nowrap;
   gap: 12px;
   align-items: center;
-  overflow: hidden; /* 防止出现滚动条 */
 }
 
 /* 筛选下拉框触发器样式（覆盖 main.css 中的通用样式）
@@ -671,10 +632,16 @@ onUnmounted(() => {
  */
 .filter-dropdown-trigger {
   min-width: 120px;
-  height: 32px;
+  height: 36px;
   padding: 0 12px;
-  line-height: 32px;
+  line-height: 36px;
   position: relative;
+}
+
+/* 筛选选项中的重置按钮统一高度 */
+.filter-options .el-button {
+  height: 36px !important;
+  padding: 0 16px;
 }
 
 /* ========== 教师列表网格样式 ========== */
@@ -701,6 +668,18 @@ onUnmounted(() => {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
 }
 
+/* 移动端禁用悬停效果，避免布局问题 */
+@media (max-width: 767px) {
+  .teacher-card:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .teacher-card:active {
+    background-color: #f5f7fa;
+  }
+}
+
 /* 教师头像容器（居中，相对定位以便放置在线标签） */
 .teacher-avatar {
   text-align: center;
@@ -708,11 +687,14 @@ onUnmounted(() => {
   position: relative;
 }
 
-/* 在线状态标签（绝对定位在头像右上角） */
+/* 在线状态标签（绝对定位在头像右上角）- 禁用动画，立即显示 */
 .online-tag {
   position: absolute;
   top: 0;
   right: calc(50% - 40px);
+  transition: none !important;
+  animation: none !important;
+  opacity: 1 !important;
 }
 
 /* 教师信息容器（居中布局） */
@@ -767,9 +749,12 @@ onUnmounted(() => {
   margin-bottom: 12px;
 }
 
-/* 科目标签样式（移除默认margin） */
+/* 科目标签样式（移除默认margin）- 禁用动画，立即显示 */
 .subject-tag {
   margin: 0;
+  transition: none !important;
+  animation: none !important;
+  opacity: 1 !important;
 }
 
 /* 教师价格区域（顶部有分隔线） */
@@ -829,22 +814,12 @@ onUnmounted(() => {
 
 /* ========== 响应式设计 ========== */
 
-/* 移动端样式（屏幕宽度 <= 767px） */
+/* 移动端通用样式（屏幕宽度 <= 767px） */
 @media (max-width: 767px) {
   .teacher-list {
     max-width: 100%;
   }
 
-  /* 移动端页面标题：缩小字体 */
-  .page-header {
-    margin-bottom: var(--spacing-md, 16px);
-  }
-
-  .page-title {
-    font-size: var(--font-size-h3, 20px);
-  }
-
-  /* 移动端筛选栏 */
   .filter-bar {
     margin-bottom: var(--spacing-md, 16px);
   }
@@ -853,60 +828,172 @@ onUnmounted(() => {
     gap: var(--spacing-sm, 12px);
   }
 
-  /* 移动端搜索框：保持水平布局，搜索按钮靠右对齐 */
   .search-box {
     flex-direction: row;
     justify-content: space-between;
     gap: var(--spacing-sm, 8px);
   }
 
-  /* 移动端搜索按钮：自动靠右 */
   .search-button {
     margin-left: auto;
     font-size: var(--font-size-button, 14px);
-    height: var(--button-height, 44px);
+    padding: 0 12px;
   }
 
-  /* 移动端筛选选项：水平滚动，不换行 */
-  .filter-options {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: var(--spacing-sm, 8px);
-    align-items: center;
-    overflow-x: auto; /* 允许横向滚动 */
-    -webkit-overflow-scrolling: touch;
-  }
-
-  /* 移动端筛选下拉框：缩小最小宽度，防止压缩 */
   .filter-dropdown-trigger {
-    min-width: 100px;
-    flex-shrink: 0;
+    width: 100%;
+    min-width: 0;
     font-size: var(--font-size-body-small, 13px);
-    height: var(--input-height, 44px);
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
   }
 
-  /* 移动端重置按钮：防止压缩，文字不换行，自动靠右 */
   .filter-options .el-button {
-    flex-shrink: 0;
-    white-space: nowrap;
-    margin-left: auto;
+    width: 100%;
     font-size: var(--font-size-button, 14px);
-    height: var(--button-height, 44px);
+    justify-content: center;
+    padding: 0 12px;
   }
 
-  /* 移动端教师网格：单列布局 */
+  /* 移动端教师卡片：横向布局 */
   .teacher-grid {
     grid-template-columns: 1fr;
+    gap: var(--spacing-sm, 12px);
+  }
+
+  .teacher-card {
+    padding: var(--spacing-sm, 12px) !important;
+  }
+
+  .teacher-card :deep(.el-card__body) {
+    padding: 0 !important;
+    display: flex;
+    align-items: flex-start;
     gap: var(--spacing-md, 16px);
   }
 
-  /* 移动端教师卡片 */
+  .teacher-avatar {
+    flex-shrink: 0;
+    margin-bottom: 0;
+    text-align: left;
+  }
+
+  .teacher-avatar :deep(.el-avatar) {
+    width: 60px !important;
+    height: 60px !important;
+  }
+
+  .online-tag {
+    top: -2px;
+    right: -2px;
+    font-size: 10px;
+    padding: 2px 4px;
+  }
+
+  .teacher-info {
+    flex: 1;
+    text-align: left;
+    min-width: 0;
+    padding-left: 4px;
+  }
+
   .teacher-name {
-    font-size: var(--font-size-h6, 16px);
+    font-size: var(--font-size-body, 15px);
+    font-weight: 600;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .teacher-rating {
+    justify-content: flex-start;
+    margin-bottom: 6px;
+    gap: 4px;
+  }
+
+  .teacher-rating :deep(.el-rate) {
+    --el-rate-height: 14px;
+  }
+
+  .teacher-rating :deep(.el-rate__item) {
+    font-size: 14px;
+  }
+
+  .rating-text {
+    font-size: 11px;
+  }
+
+  .teacher-meta {
+    justify-content: flex-start;
+    margin-bottom: 6px;
+    gap: 6px;
+  }
+
+  .teaching-years {
+    font-size: 11px;
+  }
+
+  .teacher-subjects {
+    justify-content: flex-start;
+    margin-bottom: 6px;
+    gap: 4px;
+  }
+
+  .subject-tag {
+    font-size: 11px;
+    padding: 2px 6px;
+    height: auto;
+    line-height: 1.4;
+  }
+
+  .teacher-price {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid #ebeef5;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .price-label {
+    font-size: 11px;
   }
 
   .price-value {
-    font-size: var(--font-size-h6, 16px);
+    font-size: var(--font-size-body, 15px);
+    font-weight: 600;
+    margin-left: 0;
+  }
+}
+
+/* 小屏手机（屏幕宽度 <= 359px）- 筛选选项单列布局 */
+@media (max-width: 359px) {
+  .filter-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--spacing-sm, 10px);
+    align-items: stretch;
+  }
+}
+
+/* 稍宽移动端（屏幕宽度 360px ~ 767px）- 筛选选项两列布局 */
+@media (min-width: 360px) and (max-width: 767px) {
+  .filter-options {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--spacing-sm, 10px);
+    align-items: stretch;
+  }
+
+  .filter-options .el-button:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .filter-dropdown-trigger {
+    font-size: var(--font-size-body-small, 14px);
   }
 }
 
@@ -916,11 +1003,6 @@ onUnmounted(() => {
     max-width: var(--container-max-width-tablet, 700px);
   }
 
-  .page-title {
-    font-size: var(--font-size-h2, 24px);
-  }
-
-  /* 平板端教师网格：双列布局 */
   .teacher-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: var(--spacing-lg, 20px);

@@ -19,6 +19,9 @@
             <span class="home-text">首页</span>
           </div>
         </div>
+        <div class="header-center">
+          <h1 class="page-title">{{ pageTitle }}</h1>
+        </div>
         <div class="header-right">
           <el-menu
             :default-active="activeMenu"
@@ -242,6 +245,44 @@ const activeMenu = computed(() => {
     }
   }
   return 'teachers'
+})
+
+/**
+ * 页面标题映射表
+ * 根据当前路由路径返回对应的页面标题
+ * 注意：更具体的路径应该放在前面，因为使用 startsWith 匹配
+ */
+const pageTitleMap = {
+  '/teachers': '找教师',
+  '/teacher/': '教师详情',
+  '/appointments': '我的预约',
+  '/appointment/create/': '创建预约',
+  '/appointment/': '预约详情',
+  '/payments': '支付记录',
+  '/payment/': '支付详情',
+  '/chats': '消息',
+  '/notifications': '通知',
+  '/refunds': '退款记录',
+  '/refund/create': '申请退款',
+  '/refund/': '退款详情',
+  '/profile': '个人中心',
+  '/announcements': '系统公告',
+  '/announcement/': '公告详情',
+  '/review/create': '创建评价'
+}
+
+/**
+ * 当前页面标题（计算属性）
+ * 根据当前路由路径自动返回对应的页面标题
+ */
+const pageTitle = computed(() => {
+  const path = route.path
+  for (const [routePath, title] of Object.entries(pageTitleMap)) {
+    if (path === routePath || path.startsWith(routePath)) {
+      return title
+    }
+  }
+  return ''
 })
 
 /**
@@ -547,15 +588,33 @@ onUnmounted(() => {
   margin: 0 auto;
   padding: 0 var(--spacing-lg, 20px);
   height: 100%;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
+  gap: 16px;
 }
 
 .header-left {
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* home-button 特定样式（覆盖通用样式） */
@@ -776,6 +835,12 @@ onUnmounted(() => {
   .header-content {
     padding: 0 var(--spacing-md, 16px);
     max-width: var(--container-max-width-tablet, 700px);
+    grid-template-columns: auto 1fr auto;
+    gap: 12px;
+  }
+
+  .page-title {
+    font-size: 18px;
   }
 
   .home-text {
@@ -842,6 +907,12 @@ onUnmounted(() => {
 
   .header-content {
     padding: 0 var(--spacing-md, 12px);
+    grid-template-columns: auto 1fr auto;
+    gap: 8px;
+  }
+
+  .page-title {
+    font-size: 16px;
   }
 
   .header-menu {
