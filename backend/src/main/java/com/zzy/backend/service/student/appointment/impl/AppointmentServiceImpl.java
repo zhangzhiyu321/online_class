@@ -110,11 +110,20 @@ public class AppointmentServiceImpl implements AppointmentService {
      * 验证请求参数
      */
     private void validateRequest(CreateAppointmentRequest request) {
-        // 验证日期不能是过去
+        // 验证日期不能是过去（允许今天）
         LocalDate appointmentDate = LocalDate.parse(request.getAppointmentDate(), DATE_FORMATTER);
         LocalDate today = LocalDate.now();
         if (appointmentDate.isBefore(today)) {
             throw new BusinessException("预约日期不能是过去的时间");
+        }
+        
+        // 如果选择的是今天，需要验证时间是否已过
+        if (appointmentDate.equals(today)) {
+            LocalTime startTime = LocalTime.parse(request.getStartTime(), TIME_FORMATTER);
+            LocalTime now = LocalTime.now();
+            if (startTime.isBefore(now)) {
+                throw new BusinessException("预约开始时间不能是过去的时间");
+            }
         }
 
         // 验证时间段的合理性
@@ -124,18 +133,19 @@ public class AppointmentServiceImpl implements AppointmentService {
             throw new BusinessException("结束时间必须晚于开始时间");
         }
 
-        // 验证时长是否匹配
+        // 验证时长是否匹配（允许1分钟的误差，因为可能存在舍入问题）
         int calculatedDuration = (int) java.time.Duration.between(startTime, endTime).toMinutes();
-        if (calculatedDuration != request.getDuration()) {
-            throw new BusinessException("时长与时间段不匹配");
+        if (Math.abs(calculatedDuration - request.getDuration()) > 1) {
+            throw new BusinessException("时长与时间段不匹配，计算时长：" + calculatedDuration + "分钟，提交时长：" + request.getDuration() + "分钟");
         }
 
         // 验证金额是否匹配
         double calculatedAmount = (request.getPricePerHour().doubleValue() * request.getDuration()) / 60.0;
         double expectedAmount = request.getTotalAmount().doubleValue();
-        // 允许0.01的误差
+        // 允许0.01的误差（处理浮点数精度问题）
         if (Math.abs(calculatedAmount - expectedAmount) > 0.01) {
-            throw new BusinessException("总金额计算不正确");
+            log.warn("金额验证: 计算金额={}, 提交金额={}, 差值={}", calculatedAmount, expectedAmount, Math.abs(calculatedAmount - expectedAmount));
+            throw new BusinessException("总金额计算不正确，计算金额：" + String.format("%.2f", calculatedAmount) + "元，提交金额：" + String.format("%.2f", expectedAmount) + "元");
         }
     }
 

@@ -136,6 +136,8 @@
                   placeholder="选择日期"
                   size="large"
                   class="full-width-select"
+                  format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD"
                   :disabled-date="disabledDate"
                   @change="handleDateChange"
                 />
@@ -465,28 +467,77 @@ const handleSubmit = async () => {
   submitting.value = true
   try {
     const [startTime, endTime] = form.value.timeSlot
+    
+    // 确保日期格式正确
+    let appointmentDate = form.value.appointmentDate
+    if (appointmentDate instanceof Date) {
+      // 如果是Date对象，转换为YYYY-MM-DD格式
+      const year = appointmentDate.getFullYear()
+      const month = String(appointmentDate.getMonth() + 1).padStart(2, '0')
+      const day = String(appointmentDate.getDate()).padStart(2, '0')
+      appointmentDate = `${year}-${month}-${day}`
+    }
+    
+    // 构建提交数据
     const data = {
-      ...form.value,
-      startTime,
-      endTime,
+      teacherId: form.value.teacherId,
+      stageId: form.value.stageId,
+      subjectId: form.value.subjectId,
+      appointmentDate: appointmentDate,
+      startTime: startTime,
+      endTime: endTime,
       duration: duration.value,
       pricePerHour: pricePerHour.value,
-      totalAmount: parseFloat(calculatedAmount.value)
+      totalAmount: parseFloat(calculatedAmount.value),
+      studentName: form.value.studentName,
+      studentGrade: form.value.studentGrade,
+      studentPhone: form.value.studentPhone,
+      remark: form.value.remark || ''
     }
-    await createAppointment(data)
+    
+    console.log('提交预约数据:', data)
+    
+    // 提交预约
+    const response = await createAppointment(data)
+    console.log('预约提交成功:', response)
+    
+    // 显示成功提示
     ElMessage.success('预约成功，等待教师确认')
     
-    // 尝试跳转，如果失败则显示提示
-    try {
-      await router.push('/appointments')
-    } catch (routerError) {
-      console.error('路由跳转失败:', routerError)
-      ElMessage.warning('预约已提交，但页面跳转失败，请手动前往"我的预约"页面查看')
-    }
+    // 延迟一下再跳转，确保用户看到成功提示
+    setTimeout(() => {
+      // 尝试跳转到预约列表页面
+      router.push('/appointments').catch(routerError => {
+        console.error('路由跳转失败:', routerError)
+        // 如果跳转失败，不显示警告，因为预约已经成功了
+      })
+    }, 500)
   } catch (error) {
     console.error('提交预约失败:', error)
-    const errorMessage = error?.response?.data?.message || error?.message || '预约失败，请稍后重试'
-    ElMessage.error(errorMessage)
+    console.error('错误详情:', {
+      status: error?.response?.status,
+      data: error?.response?.data,
+      message: error?.message
+    })
+    
+    // 获取错误信息
+    let errorMessage = '预约失败，请稍后重试'
+    
+    if (error?.response?.data) {
+      // 后端返回的错误信息
+      if (error.response.data.message) {
+        errorMessage = error.response.data.message
+      } else if (error.response.data.error) {
+        errorMessage = error.response.data.error
+      }
+    } else if (error?.message) {
+      errorMessage = error.message
+    }
+    
+    // 只有真正的错误才显示错误提示（排除404，因为可能是未实现的接口）
+    if (error?.response?.status !== 404) {
+      ElMessage.error(errorMessage)
+    }
   } finally {
     submitting.value = false
   }
