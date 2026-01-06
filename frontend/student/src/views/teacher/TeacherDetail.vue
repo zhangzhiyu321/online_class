@@ -42,14 +42,22 @@
               <el-tag v-if="teacherInfo.certified" type="success" size="small">已认证</el-tag>
               <span class="teaching-years">教学{{ teacherInfo.teachingYears }}年</span>
             </div>
-            <el-button
-              type="primary"
-              size="large"
-              @click="goToCreateAppointment"
-              class="appointment-button"
-            >
-              立即预约
-            </el-button>
+            <div class="action-buttons">
+              <el-button
+                type="default"
+                @click="goToChat"
+                class="chat-button"
+              >
+                联系老师
+              </el-button>
+              <el-button
+                type="primary"
+                @click="goToCreateAppointment"
+                class="appointment-button"
+              >
+                立即预约
+              </el-button>
+            </div>
           </div>
         </div>
       </el-card>
@@ -199,7 +207,8 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getTeacherDetail, getTeacherReviews } from '@/api/teacher'
-import { ArrowLeft, User, Clock } from '@element-plus/icons-vue'
+import { getChatList } from '@/api/chat'
+import { ArrowLeft, User, Clock, ChatDotRound } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
@@ -355,6 +364,32 @@ const formatTime = (time) => {
   return date.toLocaleDateString('zh-CN')
 }
 
+const goToChat = async () => {
+  if (!teacherId.value) {
+    ElMessage.error('教师ID无效')
+    return
+  }
+  
+  try {
+    // 先检查是否已有聊天关系
+    const chatList = await getChatList()
+    const chats = Array.isArray(chatList) ? chatList : (chatList?.list || [])
+    const existingChat = chats.find(chat => chat.otherUserId === parseInt(teacherId.value))
+    
+    if (existingChat && existingChat.relationshipId) {
+      // 如果已有聊天关系，直接跳转到聊天窗口
+      router.push(`/chat/${existingChat.relationshipId}`)
+    } else {
+      // 如果没有聊天关系，跳转到新聊天页面
+      router.push(`/chat/new?teacherId=${teacherId.value}`)
+    }
+  } catch (error) {
+    console.error('检查聊天关系失败:', error)
+    // 如果检查失败，直接跳转到新聊天页面
+    router.push(`/chat/new?teacherId=${teacherId.value}`)
+  }
+}
+
 const goToCreateAppointment = () => {
   router.push(`/appointment/create/${teacherId.value}`)
 }
@@ -455,12 +490,44 @@ onMounted(() => {
   color: #6b7280;
 }
 
-.appointment-button {
+.action-buttons {
+  display: flex;
+  gap: 12px;
   margin-top: 12px;
-  border-radius: 12px;
-  padding: 12px 24px;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.chat-button {
+  border-radius: 8px;
+  padding: 8px 16px;
   font-weight: 500;
+  font-size: 14px;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  color: #606266;
+  border-color: #dcdfe6;
+  background-color: #fff;
+}
+
+.chat-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  color: #409eff;
+  border-color: #409eff;
+  background-color: #ecf5ff;
+}
+
+.appointment-button {
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  flex: 0 0 auto;
 }
 
 .appointment-button:hover {
@@ -900,10 +967,18 @@ onMounted(() => {
     font-size: var(--font-size-h3, 20px);
   }
 
-  .appointment-button {
+  .action-buttons {
     width: 100%;
-    height: var(--button-height, 44px);
-    font-size: var(--font-size-button, 16px);
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .chat-button,
+  .appointment-button {
+    flex: 1;
+    max-width: 200px;
+    height: var(--button-height, 40px);
+    font-size: var(--font-size-button, 14px);
   }
 
   .info-item {

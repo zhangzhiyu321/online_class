@@ -47,6 +47,14 @@
           AND deleted_at IS NULL
     </select>
 
+    <!-- 根据ID查询用户 -->
+    <select id="selectById" resultMap="UserResultMap">
+        SELECT *
+        FROM users
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </select>
+
     <!-- 插入用户 -->
     <insert id="insert" parameterType="com.zzy.backend.entity.user.User" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO users (

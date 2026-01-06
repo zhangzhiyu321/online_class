@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzy.backend.mapper.student.chat.ChatMessageMapper">
+
+    <!-- 消息结果映射 -->
+    <resultMap id="ChatMessageResultMap" type="com.zzy.backend.entity.chat.ChatMessage">
+        <id property="id" column="id"/>
+        <result property="relationshipId" column="relationship_id"/>
+        <result property="senderId" column="sender_id"/>
+        <result property="receiverId" column="receiver_id"/>
+        <result property="messageType" column="message_type"/>
+        <result property="content" column="content"/>
+        <result property="fileUrl" column="file_url"/>
+        <result property="fileName" column="file_name"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="duration" column="duration"/>
+        <result property="imageWidth" column="image_width"/>
+        <result property="imageHeight" column="image_height"/>
+        <result property="thumbnailUrl" column="thumbnail_url"/>
+        <result property="isRead" column="is_read"/>
+        <result property="readAt" column="read_at"/>
+        <result property="isRecalled" column="is_recalled"/>
+        <result property="recalledAt" column="recalled_at"/>
+        <result property="status" column="status"/>
+        <result property="extra" column="extra"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <!-- 消息响应结果映射 -->
+    <resultMap id="MessageResponseResultMap" type="com.zzy.backend.dto.response.student.chat.MessageResponse">
+        <id property="id" column="id"/>
+        <result property="relationshipId" column="relationship_id"/>
+        <result property="senderId" column="sender_id"/>
+        <result property="receiverId" column="receiver_id"/>
+        <result property="messageType" column="message_type"/>
+        <result property="content" column="content"/>
+        <result property="fileUrl" column="file_url"/>
+        <result property="fileName" column="file_name"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="imageWidth" column="image_width"/>
+        <result property="imageHeight" column="image_height"/>
+        <result property="thumbnailUrl" column="thumbnail_url"/>
+        <result property="isRead" column="is_read"/>
+        <result property="readAt" column="read_at"/>
+        <result property="isRecalled" column="is_recalled"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- 插入消息 -->
+    <insert id="insert" parameterType="com.zzy.backend.entity.chat.ChatMessage" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO chat_messages (
+            relationship_id,
+            sender_id,
+            receiver_id,
+            message_type,
+            content,
+            file_url,
+            file_name,
+            file_size,
+            image_width,
+            image_height,
+            thumbnail_url,
+            is_read,
+            status,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{relationshipId},
+            #{senderId},
+            #{receiverId},
+            #{messageType},
+            #{content},
+            #{fileUrl},
+            #{fileName},
+            #{fileSize},
+            #{imageWidth},
+            #{imageHeight},
+            #{thumbnailUrl},
+            #{isRead},
+            #{status},
+            #{createdAt},
+            #{updatedAt}
+        )
+    </insert>
+
+    <!-- 根据ID查询消息 -->
+    <select id="selectById" resultMap="ChatMessageResultMap">
+        SELECT *
+        FROM chat_messages
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- 查询聊天消息列表（分页） -->
+    <select id="selectMessagesByRelationshipId" resultMap="MessageResponseResultMap">
+        SELECT
+            id,
+            relationship_id,
+            sender_id,
+            receiver_id,
+            message_type,
+            content,
+            file_url,
+            file_name,
+            file_size,
+            image_width,
+            image_height,
+            thumbnail_url,
+            CASE
+                WHEN receiver_id = #{userId} THEN is_read
+                ELSE 1
+            END AS is_read,
+            CASE
+                WHEN receiver_id = #{userId} THEN read_at
+                ELSE NULL
+            END AS read_at,
+            is_recalled,
+            created_at
+        FROM chat_messages
+        WHERE relationship_id = #{relationshipId}
+          AND deleted_at IS NULL
+          AND is_recalled = 0
+        ORDER BY created_at DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <!-- 统计聊天消息总数 -->
+    <select id="countMessagesByRelationshipId" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM chat_messages
+        WHERE relationship_id = #{relationshipId}
+          AND deleted_at IS NULL
+          AND is_recalled = 0
+    </select>
+
+    <!-- 标记消息为已读 -->
+    <update id="markMessagesAsRead">
+        UPDATE chat_messages
+        SET is_read = 1,
+            read_at = NOW(),
+            updated_at = NOW()
+        WHERE relationship_id = #{relationshipId}
+          AND receiver_id = #{receiverId}
+          AND is_read = 0
+          AND deleted_at IS NULL
+          AND is_recalled = 0
+    </update>
+
+    <!-- 撤回消息 -->
+    <update id="recallMessage">
+        UPDATE chat_messages
+        SET is_recalled = 1,
+            recalled_at = NOW(),
+            updated_at = NOW()
+        WHERE id = #{messageId}
+          AND sender_id = #{senderId}
+          AND deleted_at IS NULL
+          AND is_recalled = 0
+          AND TIMESTAMPDIFF(MINUTE, created_at, NOW()) &lt;= 2
+    </update>
+
+</mapper>
+

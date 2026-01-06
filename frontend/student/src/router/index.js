@@ -33,6 +33,18 @@ const router = createRouter({
       meta: { requiresAuth: false }
     },
     {
+      path: '/chat/:relationshipId',
+      name: 'ChatWindow',
+      component: () => import('@/views/chat/ChatWindow.vue'),
+      meta: { requiresAuth: true, hideLayout: true }
+    },
+    {
+      path: '/chat/new',
+      name: 'NewChat',
+      component: () => import('@/views/chat/ChatWindow.vue'),
+      meta: { requiresAuth: true, hideLayout: true }
+    },
+    {
       path: '/',
       component: () => import('@/layouts/MainLayout.vue'),
       meta: { requiresAuth: true },
@@ -101,11 +113,6 @@ const router = createRouter({
           path: 'chats',
           name: 'Chats',
           component: () => import('@/views/chat/ChatList.vue')
-        },
-        {
-          path: 'chat/:relationshipId',
-          name: 'ChatWindow',
-          component: () => import('@/views/chat/ChatWindow.vue')
         },
         {
           path: 'profile',

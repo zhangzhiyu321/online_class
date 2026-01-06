@@ -11,7 +11,7 @@
 <template>
   <div class="main-layout">
     <!-- 顶部导航栏（固定定位，始终显示在页面顶部） -->
-    <el-header class="header">
+    <el-header v-if="!shouldHideLayout" class="header">
       <div class="header-content">
         <div class="header-left">
           <div class="home-button" @click="handleHomeClick">
@@ -110,6 +110,7 @@
 
     <!-- 移动端底部导航 -->
     <div 
+      v-if="!shouldHideLayout"
       class="mobile-bottom-nav"
       @touchstart="handleTouchStart"
       @touchmove="handleTouchMove"
@@ -241,6 +242,14 @@ const activeMenu = computed(() => {
     }
   }
   return 'teachers'
+})
+
+/**
+ * 是否应该隐藏布局（顶部和底部导航）
+ * 当路由 meta 中 hideLayout 为 true 时，隐藏导航栏
+ */
+const shouldHideLayout = computed(() => {
+  return route.meta?.hideLayout === true
 })
 
 /**
@@ -631,6 +640,14 @@ onUnmounted(() => {
   min-height: calc(100vh - 64px);
   will-change: transform;
   transform: translateZ(0);
+}
+
+/* 当隐藏布局时，主内容区域占满整个视口 */
+.main-layout:has(.main-content:only-child) .main-content,
+.main-content.full-screen {
+  padding: 0;
+  max-width: 100%;
+  min-height: 100vh;
 }
 
 /* ========== 移动端底部导航样式 ========== */

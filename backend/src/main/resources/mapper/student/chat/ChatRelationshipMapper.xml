@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzy.backend.mapper.student.chat.ChatRelationshipMapper">
+
+    <!-- 聊天关系结果映射 -->
+    <resultMap id="ChatRelationshipResultMap" type="com.zzy.backend.entity.chat.ChatRelationship">
+        <id property="id" column="id"/>
+        <result property="user1Id" column="user1_id"/>
+        <result property="user2Id" column="user2_id"/>
+        <result property="appointmentId" column="appointment_id"/>
+        <result property="user1UnreadCount" column="user1_unread_count"/>
+        <result property="user2UnreadCount" column="user2_unread_count"/>
+        <result property="user1Top" column="user1_top"/>
+        <result property="user2Top" column="user2_top"/>
+        <result property="lastMessageId" column="last_message_id"/>
+        <result property="lastMessageTime" column="last_message_time"/>
+        <result property="status" column="status"/>
+        <result property="extra" column="extra"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <!-- 聊天列表项结果映射 -->
+    <resultMap id="ChatListItemResultMap" type="com.zzy.backend.dto.response.student.chat.ChatListItemResponse">
+        <id property="relationshipId" column="relationship_id"/>
+        <result property="otherUserId" column="other_user_id"/>
+        <result property="otherUserName" column="other_user_name"/>
+        <result property="otherUserAvatar" column="other_user_avatar"/>
+        <result property="unreadCount" column="unread_count"/>
+        <result property="isTop" column="is_top"/>
+        <result property="lastMessageContent" column="last_message_content"/>
+        <result property="lastMessageType" column="last_message_type"/>
+        <result property="lastMessageTime" column="last_message_time"/>
+    </resultMap>
+
+    <!-- 聊天关系详情结果映射 -->
+    <resultMap id="ChatRelationshipDetailResultMap" type="com.zzy.backend.dto.response.student.chat.ChatRelationshipResponse">
+        <id property="relationshipId" column="relationship_id"/>
+        <result property="otherUserId" column="other_user_id"/>
+        <result property="otherUserName" column="other_user_name"/>
+        <result property="otherUserAvatar" column="other_user_avatar"/>
+        <result property="otherUserPhone" column="other_user_phone"/>
+        <result property="appointmentId" column="appointment_id"/>
+        <result property="unreadCount" column="unread_count"/>
+        <result property="isTop" column="is_top"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- 根据用户对查询聊天关系 -->
+    <select id="selectByUserPair" resultMap="ChatRelationshipResultMap">
+        SELECT *
+        FROM chat_relationships
+        WHERE ((user1_id = #{user1Id} AND user2_id = #{user2Id})
+            OR (user1_id = #{user2Id} AND user2_id = #{user1Id}))
+          AND deleted_at IS NULL
+        LIMIT 1
+    </select>
+
+    <!-- 插入聊天关系 -->
+    <insert id="insert" parameterType="com.zzy.backend.entity.chat.ChatRelationship" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO chat_relationships (
+            user1_id,
+            user2_id,
+            appointment_id,
+            user1_unread_count,
+            user2_unread_count,
+            user1_top,
+            user2_top,
+            status,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{user1Id},
+            #{user2Id},
+            #{appointmentId},
+            #{user1UnreadCount},
+            #{user2UnreadCount},
+            #{user1Top},
+            #{user2Top},
+            #{status},
+            #{createdAt},
+            #{updatedAt}
+        )
+    </insert>
+
+    <!-- 根据ID查询聊天关系 -->
+    <select id="selectById" resultMap="ChatRelationshipResultMap">
+        SELECT *
+        FROM chat_relationships
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- 查询用户的聊天列表 -->
+    <select id="selectChatListByUserId" resultMap="ChatListItemResultMap">
+        SELECT
+            cr.id AS relationship_id,
+            CASE
+                WHEN cr.user1_id = #{userId} THEN cr.user2_id
+                ELSE cr.user1_id
+            END AS other_user_id,
+            COALESCE(u.nickname, u.username, tp.real_name, '未知用户') AS other_user_name,
+            u.avatar AS other_user_avatar,
+            CASE
+                WHEN cr.user1_id = #{userId} THEN cr.user1_unread_count
+                ELSE cr.user2_unread_count
+            END AS unread_count,
+            CASE
+                WHEN cr.user1_id = #{userId} THEN cr.user1_top
+                ELSE cr.user2_top
+            END AS is_top,
+            CASE
+                WHEN cm.message_type = 1 THEN cm.content
+                WHEN cm.message_type = 4 THEN '[图片]'
+                ELSE '[消息]'
+            END AS last_message_content,
+            cm.message_type AS last_message_type,
+            cr.last_message_time
+        FROM chat_relationships cr
+        INNER JOIN users u ON (
+            (cr.user1_id = #{userId} AND u.id = cr.user2_id)
+            OR (cr.user2_id = #{userId} AND u.id = cr.user1_id)
+        ) AND u.deleted_at IS NULL
+        LEFT JOIN teacher_profiles tp ON u.id = tp.user_id AND tp.deleted_at IS NULL
+        LEFT JOIN chat_messages cm ON cr.last_message_id = cm.id AND cm.deleted_at IS NULL
+        WHERE (cr.user1_id = #{userId} OR cr.user2_id = #{userId})
+          AND cr.deleted_at IS NULL
+        ORDER BY cr.last_message_time DESC, cr.updated_at DESC
+    </select>
+
+    <!-- 查询聊天关系详情 -->
+    <select id="selectChatRelationshipDetail" resultMap="ChatRelationshipDetailResultMap">
+        SELECT
+            cr.id AS relationship_id,
+            CASE
+                WHEN cr.user1_id = #{userId} THEN cr.user2_id
+                ELSE cr.user1_id
+            END AS other_user_id,
+            COALESCE(u.nickname, u.username, tp.real_name, '未知用户') AS other_user_name,
+            u.avatar AS other_user_avatar,
+            u.phone AS other_user_phone,
+            cr.appointment_id,
+            CASE
+                WHEN cr.user1_id = #{userId} THEN cr.user1_unread_count
+                ELSE cr.user2_unread_count
+            END AS unread_count,
+            CASE
+                WHEN cr.user1_id = #{userId} THEN cr.user1_top
+                ELSE cr.user2_top
+            END AS is_top,
+            cr.created_at
+        FROM chat_relationships cr
+        INNER JOIN users u ON (
+            (cr.user1_id = #{userId} AND u.id = cr.user2_id)
+            OR (cr.user2_id = #{userId} AND u.id = cr.user1_id)
+        ) AND u.deleted_at IS NULL
+        LEFT JOIN teacher_profiles tp ON u.id = tp.user_id AND tp.deleted_at IS NULL
+        WHERE cr.id = #{relationshipId}
+          AND (cr.user1_id = #{userId} OR cr.user2_id = #{userId})
+          AND cr.deleted_at IS NULL
+    </select>
+
+    <!-- 更新最后消息信息 -->
+    <update id="updateLastMessage">
+        UPDATE chat_relationships
+        SET last_message_id = #{lastMessageId},
+            last_message_time = #{lastMessageTime},
+            updated_at = NOW()
+        WHERE id = #{relationshipId}
+          AND deleted_at IS NULL
+    </update>
+
+    <!-- 增加未读消息数 -->
+    <update id="increaseUnreadCount">
+        UPDATE chat_relationships
+        SET
+            user1_unread_count = CASE
+                WHEN user1_id = #{userId} THEN user1_unread_count + #{count}
+                ELSE user1_unread_count
+            END,
+            user2_unread_count = CASE
+                WHEN user2_id = #{userId} THEN user2_unread_count + #{count}
+                ELSE user2_unread_count
+            END,
+            updated_at = NOW()
+        WHERE id = #{relationshipId}
+          AND deleted_at IS NULL
+    </update>
+
+    <!-- 清空未读消息数 -->
+    <update id="clearUnreadCount">
+        UPDATE chat_relationships
+        SET
+            user1_unread_count = CASE
+                WHEN user1_id = #{userId} THEN 0
+                ELSE user1_unread_count
+            END,
+            user2_unread_count = CASE
+                WHEN user2_id = #{userId} THEN 0
+                ELSE user2_unread_count
+            END,
+            updated_at = NOW()
+        WHERE id = #{relationshipId}
+          AND deleted_at IS NULL
+    </update>
+
+    <!-- 统计用户未读消息总数 -->
+    <select id="countUnreadMessages" resultType="java.lang.Integer">
+        SELECT COALESCE(SUM(
+            CASE
+                WHEN user1_id = #{userId} THEN user1_unread_count
+                WHEN user2_id = #{userId} THEN user2_unread_count
+                ELSE 0
+            END
+        ), 0)
+        FROM chat_relationships
+        WHERE (user1_id = #{userId} OR user2_id = #{userId})
+          AND deleted_at IS NULL
+    </select>
+
+</mapper>
+

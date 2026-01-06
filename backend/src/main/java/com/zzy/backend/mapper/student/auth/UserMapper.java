@@ -43,6 +43,14 @@ public interface UserMapper {
     int insert(User user);
 
     /**
+     * 根据ID查询用户
+     *
+     * @param id 用户ID
+     * @return 用户实体
+     */
+    User selectById(@Param("id") Long id);
+
+    /**
      * 更新用户最后登录信息
      *
      * @param userId 用户ID
