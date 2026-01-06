@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.zzy.backend.mapper.student.notification.NotificationMapper">
+
+    <!-- 通知结果映射 -->
+    <resultMap id="NotificationResultMap" type="com.zzy.backend.entity.notification.Notification">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="type" column="type"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="relatedId" column="related_id"/>
+        <result property="relatedType" column="related_type"/>
+        <result property="isRead" column="is_read"/>
+        <result property="readAt" column="read_at"/>
+        <result property="status" column="status"/>
+        <result property="extra" column="extra"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <!-- 通知列表项结果映射 -->
+    <resultMap id="NotificationListItemResultMap" type="com.zzy.backend.dto.response.student.notification.NotificationListItemResponse">
+        <id property="id" column="id"/>
+        <result property="type" column="type"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="relatedId" column="related_id"/>
+        <result property="relatedType" column="related_type"/>
+        <result property="isRead" column="is_read"/>
+        <result property="readAt" column="read_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- 通知详情结果映射 -->
+    <resultMap id="NotificationDetailResultMap" type="com.zzy.backend.dto.response.student.notification.NotificationDetailResponse">
+        <id property="id" column="id"/>
+        <result property="type" column="type"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="relatedId" column="related_id"/>
+        <result property="relatedType" column="related_type"/>
+        <result property="isRead" column="is_read"/>
+        <result property="readAt" column="read_at"/>
+        <result property="extra" column="extra"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <!-- 查询通知列表 -->
+    <select id="selectNotificationList" resultMap="NotificationListItemResultMap">
+        SELECT
+            id,
+            type,
+            title,
+            content,
+            related_id,
+            related_type,
+            is_read,
+            read_at,
+            created_at
+        FROM notifications
+        WHERE user_id = #{userId}
+          AND deleted_at IS NULL
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        <if test="isRead != null">
+            AND is_read = #{isRead}
+        </if>
+        ORDER BY created_at DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 统计通知总数 -->
+    <select id="countNotificationList" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM notifications
+        WHERE user_id = #{userId}
+          AND deleted_at IS NULL
+        <if test="type != null">
+            AND type = #{type}
+        </if>
+        <if test="isRead != null">
+            AND is_read = #{isRead}
+        </if>
+    </select>
+
+    <!-- 根据ID查询通知详情 -->
+    <select id="selectNotificationDetail" resultMap="NotificationDetailResultMap">
+        SELECT
+            id,
+            type,
+            title,
+            content,
+            related_id,
+            related_type,
+            is_read,
+            read_at,
+            extra,
+            created_at
+        FROM notifications
+        WHERE id = #{id}
+          AND user_id = #{userId}
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- 根据ID查询通知 -->
+    <select id="selectById" resultMap="NotificationResultMap">
+        SELECT *
+        FROM notifications
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </select>
+
+    <!-- 标记通知为已读 -->
+    <update id="markAsRead">
+        UPDATE notifications
+        SET is_read = 1,
+            read_at = NOW(),
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND user_id = #{userId}
+          AND deleted_at IS NULL
+          AND is_read = 0
+    </update>
+
+    <!-- 标记所有通知为已读 -->
+    <update id="markAllAsRead">
+        UPDATE notifications
+        SET is_read = 1,
+            read_at = NOW(),
+            updated_at = NOW()
+        WHERE user_id = #{userId}
+          AND deleted_at IS NULL
+          AND is_read = 0
+    </update>
+
+    <!-- 删除通知（软删除） -->
+    <update id="deleteNotification">
+        UPDATE notifications
+        SET status = 2,
+            deleted_at = NOW(),
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND user_id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
+    <!-- 统计未读通知数 -->
+    <select id="countUnreadNotifications" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM notifications
+        WHERE user_id = #{userId}
+          AND is_read = 0
+          AND deleted_at IS NULL
+    </select>
+
+</mapper>
+
