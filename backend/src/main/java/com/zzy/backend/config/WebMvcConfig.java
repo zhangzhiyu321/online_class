@@ -31,11 +31,13 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .order(1);
         
         // 认证拦截器
+        // 注意：由于设置了 context-path=/api，拦截器的路径匹配是相对于 context-path 的
+        // 所以不需要在路径前加 /api 前缀
         registry.addInterceptor(authInterceptor)
                 .addPathPatterns("/**")
                 .excludePathPatterns(
-                        "/api/auth/**",           // 认证相关接口
-                        "/api/common/**",         // 公共接口
+                        "/auth/**",               // 认证相关接口（实际路径：/api/auth/**）
+                        "/common/**",             // 公共接口（实际路径：/api/common/**）
                         "/doc.html",              // Knife4j 文档
                         "/webjars/**",            // Knife4j 静态资源
                         "/v3/api-docs/**",        // OpenAPI 文档
