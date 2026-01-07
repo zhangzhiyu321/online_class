@@ -37,13 +37,15 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addPathPatterns("/**")
                 .excludePathPatterns(
                         "/auth/**",               // 认证相关接口（实际路径：/api/auth/**）
-                        "/common/**",             // 公共接口（实际路径：/api/common/**）
-                        "/doc.html",              // Knife4j 文档
-                        "/webjars/**",            // Knife4j 静态资源
-                        "/v3/api-docs/**",        // OpenAPI 文档
-                        "/actuator/**",           // Actuator 监控
-                        "/error",                 // 错误页面
-                        "/favicon.ico"            // 图标
+                        "/common/teaching-stages", // 教学阶段列表（不需要认证）
+                        "/common/subjects",        // 科目列表（不需要认证）
+                        "/uploads/**",             // 静态资源（不需要认证）
+                        "/doc.html",               // Knife4j 文档
+                        "/webjars/**",             // Knife4j 静态资源
+                        "/v3/api-docs/**",         // OpenAPI 文档
+                        "/actuator/**",            // Actuator 监控
+                        "/error",                  // 错误页面
+                        "/favicon.ico"             // 图标
                 )
                 .order(2);
     }
@@ -54,6 +56,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         // 文件上传路径映射
+        // 注意：由于设置了 context-path=/api，资源路径也需要加上 /api 前缀
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:./uploads/");
     }

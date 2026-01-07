@@ -7,15 +7,18 @@
         <el-button
           type="text"
           :icon="ArrowLeft"
-          @click="$router.back()"
+          @click="router.push('/chats')"
           class="header-back-button"
         >
           返回
         </el-button>
         <!-- 居中显示的名字 -->
-        <div class="header-center">
-          <h3 class="header-title">{{ chatInfo.name }}</h3>
-          <span v-if="chatInfo.onlineStatus === 1" class="online-status">在线</span>
+        <div class="header-center" @click="goToUserProfile">
+          <el-avatar :src="chatInfo.avatar" :size="32" class="header-avatar" />
+          <div class="header-title-wrapper">
+            <h3 class="header-title">{{ chatInfo.name }}</h3>
+            <span v-if="chatInfo.onlineStatus === 1" class="online-status">在线</span>
+          </div>
         </div>
         <!-- 右侧占位，保持居中 -->
         <div class="header-right-placeholder"></div>
@@ -41,7 +44,8 @@
               v-if="message.senderId !== currentUserId"
               :src="chatInfo.avatar"
               :size="40"
-              class="message-avatar"
+              class="message-avatar clickable"
+              @click="goToUserProfile"
             />
             <!-- 消息内容 -->
             <div class="message-content">
@@ -54,11 +58,15 @@
                 <div v-else-if="message.messageType === 4" class="message-image-wrapper">
                   <el-image
                     :src="getImageUrl(message)"
-                    :preview-src-list="[getImageUrl(message)]"
+                    :preview-src-list="allImageUrls"
+                    :initial-index="getImageIndex(message)"
                     fit="cover"
                     class="message-image"
                     :lazy="true"
                     loading="lazy"
+                    :preview-teleported="true"
+                    :hide-on-click-modal="true"
+                    :z-index="3000"
                   >
                     <template #error>
                       <div class="image-error">
@@ -244,6 +252,20 @@ const voiceAudioRefs = ref([])
 
 const currentUserId = computed(() => userStore.userInfo?.id)
 const currentUserAvatar = computed(() => userStore.userInfo?.avatar)
+
+// 收集所有图片消息的 URL，用于预览
+const allImageUrls = computed(() => {
+  return messages.value
+    .filter(msg => msg.messageType === 4)
+    .map(msg => getImageUrl(msg))
+    .filter(url => url) // 过滤掉空 URL
+})
+
+// 获取图片在预览列表中的索引
+const getImageIndex = (message) => {
+  const imageUrl = getImageUrl(message)
+  return allImageUrls.value.indexOf(imageUrl)
+}
 
 const loadMessages = async () => {
   // 如果是新建聊天或 relationshipId 无效，不加载消息
@@ -549,7 +571,14 @@ const handleImageUpload = () => {
     try {
       sending.value = true
       const uploadResult = await uploadFile(file, 'image')
-      const imageUrl = uploadResult.url || uploadResult.data?.url || uploadResult
+      // 处理返回格式：request拦截器已经提取了data，所以uploadResult就是 { url: "..." }
+      const imageUrl = uploadResult?.url || (typeof uploadResult === 'string' ? uploadResult : '')
+      
+      if (!imageUrl) {
+        ElMessage.error('上传失败：未获取到图片URL')
+        sending.value = false
+        return
+      }
       
       // 获取图片尺寸
       const img = new Image()
@@ -832,6 +861,16 @@ const loadChatInfo = async () => {
   }
 }
 
+// 跳转到用户个人中心或老师详情页
+const goToUserProfile = () => {
+  if (!chatInfo.value.userId) {
+    ElMessage.warning('无法获取用户信息')
+    return
+  }
+  // 由于这是学生端，聊天对象通常是老师，直接跳转到老师详情页
+  router.push(`/teacher/${chatInfo.value.userId}`)
+}
+
 // WebSocket 连接
 let ws = null
 const connectWebSocket = () => {
@@ -973,13 +1012,33 @@ onMounted(async () => {
 .header-center {
   flex: 1;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   position: absolute;
   left: 0;
   right: 0;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 8px;
+  transition: background-color 0.2s;
+}
+
+.header-center:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.header-avatar {
+  flex-shrink: 0;
+}
+
+.header-title-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
 .header-title {
@@ -993,7 +1052,7 @@ onMounted(async () => {
 .online-status {
   font-size: 11px;
   color: #67c23a;
-  margin-top: 2px;
+  line-height: 1;
 }
 
 .header-right-placeholder {
@@ -1029,6 +1088,16 @@ onMounted(async () => {
 
 .message-avatar {
   flex-shrink: 0;
+}
+
+.message-avatar.clickable {
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.message-avatar.clickable:hover {
+  transform: scale(1.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
 .message-content {

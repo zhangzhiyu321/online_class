@@ -3,10 +3,8 @@
     <el-card class="profile-card">
       <div class="profile-header">
         <el-upload
-          :action="uploadUrl"
-          :headers="uploadHeaders"
-          :on-success="handleAvatarSuccess"
-          :on-error="handleAvatarError"
+          :http-request="handleCustomAvatarUpload"
+          :before-upload="beforeAvatarUpload"
           :show-file-list="false"
         >
           <el-avatar :src="userInfo.avatar" :size="100" class="profile-avatar">
@@ -124,6 +122,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { updateUserInfo, uploadAvatar, getUserInfo } from '@/api/user'
+import { uploadFile } from '@/api/common'
 import { getSubjects } from '@/api/common'
 import { User, Camera } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -183,15 +182,39 @@ const studentRules = {
   ]
 }
 
-const uploadUrl = computed(() => {
-  return `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api'}/user/avatar`
-})
+// 上传前验证
+const beforeAvatarUpload = (file) => {
+  const isImage = file.type.startsWith('image/')
+  const isLt5M = file.size / 1024 / 1024 < 5
 
-const uploadHeaders = computed(() => {
-  return {
-    Authorization: `Bearer ${userStore.token}`
+  if (!isImage) {
+    ElMessage.error('只能上传图片文件！')
+    return false
   }
-})
+  if (!isLt5M) {
+    ElMessage.error('头像大小不能超过 5MB！')
+    return false
+  }
+  return true
+}
+
+// 自定义头像上传
+const handleCustomAvatarUpload = async (options) => {
+  const { file } = options
+  try {
+    const result = await uploadAvatar(file)
+    // 处理不同的返回格式
+    const avatarUrl = result?.url || result?.data?.url || (typeof result === 'string' ? result : '')
+    if (!avatarUrl) {
+      throw new Error('上传失败：未获取到头像URL')
+    }
+    await updateUserInfo({ avatar: avatarUrl })
+    userStore.loadUserInfo()
+    ElMessage.success('头像上传成功')
+  } catch (error) {
+    ElMessage.error(error.message || '头像上传失败')
+  }
+}
 
 const loadUserInfo = async () => {
   try {
@@ -229,16 +252,6 @@ const loadSubjects = async () => {
   }
 }
 
-const handleAvatarSuccess = async (response) => {
-  const avatarUrl = response.data || response.url
-  await updateUserInfo({ avatar: avatarUrl })
-  userStore.loadUserInfo()
-  ElMessage.success('头像上传成功')
-}
-
-const handleAvatarError = () => {
-  ElMessage.error('头像上传失败')
-}
 
 const handleSubmit = async () => {
   if (!formRef.value) return

@@ -96,5 +96,14 @@
           AND deleted_at IS NULL
     </update>
 
+    <!-- 更新用户头像 -->
+    <update id="updateAvatar">
+        UPDATE users
+        SET avatar = #{avatarUrl},
+            updated_at = NOW()
+        WHERE id = #{userId}
+          AND deleted_at IS NULL
+    </update>
+
 </mapper>
 

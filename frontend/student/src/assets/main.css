@@ -225,26 +225,91 @@ body {
   border-radius: 16px !important;
   padding: 14px 20px !important;
   min-width: auto !important;
-  animation: messageBounce 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+  animation: messageSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   background: var(--glass-bg-dark) !important;
   backdrop-filter: var(--glass-backdrop-strong) !important;
   -webkit-backdrop-filter: var(--glass-backdrop-strong) !important;
   border: 1px solid var(--glass-border) !important;
   box-shadow: var(--glass-shadow) !important;
-  will-change: transform;
+  will-change: transform, opacity;
   font-size: var(--font-size-body) !important;
   max-width: 90vw !important;
+  /* 默认位置：顶部居中 */
+  top: 20px !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  /* 手机端支持触摸滑动 */
+  touch-action: pan-y !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 
-/* 手机端 ElMessage 样式 */
+/* 消息滑入动画 - 从顶部滑下 */
+@keyframes messageSlideIn {
+  0% {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 消息滑出动画 - 向上滑出 */
+@keyframes messageSlideOut {
+  0% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+}
+
+/* 电脑端滑入动画 */
+@media (min-width: 1025px) {
+  @keyframes messageSlideIn {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes messageSlideOut {
+    0% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+  }
+}
+
+/* 手机端 ElMessage 样式 - 顶部居中 */
 @media (max-width: 767px) {
   .el-message {
     padding: 12px 16px !important;
     font-size: var(--font-size-body-small) !important;
     max-width: calc(100vw - 32px) !important;
-    left: 16px !important;
-    right: 16px !important;
+    top: 20px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
     margin-left: 0 !important;
+    margin-right: 0 !important;
   }
   
   .el-message__content {
@@ -253,21 +318,33 @@ body {
   }
 }
 
-/* 平板端 ElMessage 样式 */
+/* 平板端 ElMessage 样式 - 顶部居中 */
 @media (min-width: 768px) and (max-width: 1024px) {
   .el-message {
     padding: 14px 18px !important;
     font-size: var(--font-size-body) !important;
     max-width: 500px !important;
+    top: 20px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
 }
 
-/* 电脑端 ElMessage 样式 */
+/* 电脑端 ElMessage 样式 - 右上角 */
 @media (min-width: 1025px) {
   .el-message {
     padding: 14px 20px !important;
     font-size: var(--font-size-body) !important;
     max-width: 600px !important;
+    top: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+    transform: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
   }
 }
 
@@ -291,18 +368,25 @@ body {
   border-color: #93c5fd !important;
 }
 
-/* Q弹动画效果 */
-@keyframes messageBounce {
-  0% {
-    transform: scale(0.8);
-    opacity: 0;
+/* 消息关闭时的滑出动画类 */
+.el-message.is-closing,
+.el-message.el-message-fade-leave-active {
+  animation: messageSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+/* 手机端滑出动画 */
+@media (max-width: 767px) {
+  .el-message.is-closing,
+  .el-message.el-message-fade-leave-active {
+    animation: messageSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
   }
-  50% {
-    transform: scale(1.05);
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
+}
+
+/* 电脑端滑出动画 */
+@media (min-width: 1025px) {
+  .el-message.is-closing,
+  .el-message.el-message-fade-leave-active {
+    animation: messageSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
   }
 }
 
@@ -427,25 +511,93 @@ body {
 /* ElNotification 通知框圆角优化 - iOS 16 毛玻璃效果 */
 .el-notification {
   border-radius: 16px !important;
-  animation: messageBounce 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55) !important;
+  animation: notificationSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   background: var(--glass-bg-dark) !important;
   backdrop-filter: var(--glass-backdrop-strong) !important;
   -webkit-backdrop-filter: var(--glass-backdrop-strong) !important;
   border: 1px solid var(--glass-border) !important;
   box-shadow: var(--glass-shadow) !important;
-  will-change: transform;
+  will-change: transform, opacity;
   font-size: var(--font-size-body) !important;
+  /* 默认位置：顶部居中 */
+  top: 20px !important;
+  left: 50% !important;
+  right: auto !important;
+  transform: translateX(-50%) !important;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  /* 手机端支持触摸滑动 */
+  touch-action: pan-y !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
 }
 
-/* 手机端 ElNotification 样式 */
+/* 通知滑入动画 - 从顶部滑下 */
+@keyframes notificationSlideIn {
+  0% {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* 通知滑出动画 - 向上滑出 */
+@keyframes notificationSlideOut {
+  0% {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+}
+
+/* 电脑端通知滑入动画 */
+@media (min-width: 1025px) {
+  @keyframes notificationSlideIn {
+    0% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes notificationSlideOut {
+    0% {
+      transform: translateY(0);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+  }
+}
+
+/* 通知关闭时的滑出动画类 */
+.el-notification.is-closing,
+.el-notification.el-notification-fade-leave-active {
+  animation: notificationSlideOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+/* 手机端 ElNotification 样式 - 顶部居中 */
 @media (max-width: 767px) {
   .el-notification {
     width: calc(100vw - 32px) !important;
     max-width: 400px !important;
     padding: 12px 16px !important;
     font-size: var(--font-size-body-small) !important;
-    right: 16px !important;
-    left: auto !important;
+    top: 20px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
   }
   
   .el-notification__title {
@@ -459,19 +611,109 @@ body {
   }
 }
 
-/* 平板端 ElNotification 样式 */
+/* 平板端 ElNotification 样式 - 顶部居中 */
 @media (min-width: 768px) and (max-width: 1024px) {
   .el-notification {
     width: 400px !important;
     padding: 14px 18px !important;
+    top: 20px !important;
+    left: 50% !important;
+    right: auto !important;
+    transform: translateX(-50%) !important;
   }
 }
 
-/* 电脑端 ElNotification 样式 */
+/* 电脑端 ElNotification 样式 - 右上角 */
 @media (min-width: 1025px) {
   .el-notification {
     width: 450px !important;
     padding: 16px 20px !important;
+    top: 20px !important;
+    right: 20px !important;
+    left: auto !important;
+    transform: none !important;
+  }
+}
+
+/* 消息容器位置调整 - 确保消息正确显示在指定位置 */
+.el-message-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  pointer-events: none !important;
+  z-index: 3000 !important;
+}
+
+/* 手机端消息容器 - 顶部居中 */
+@media (max-width: 767px) {
+  .el-message-container {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    padding-top: 20px !important;
+  }
+}
+
+/* 平板端消息容器 - 顶部居中 */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .el-message-container {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    padding-top: 20px !important;
+  }
+}
+
+/* 电脑端消息容器 - 右上角 */
+@media (min-width: 1025px) {
+  .el-message-container {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: flex-start !important;
+    padding-top: 20px !important;
+    padding-right: 20px !important;
+  }
+}
+
+/* 通知容器位置调整 */
+.el-notification-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  pointer-events: none !important;
+  z-index: 3000 !important;
+}
+
+/* 手机端通知容器 - 顶部居中 */
+@media (max-width: 767px) {
+  .el-notification-container {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    padding-top: 20px !important;
+  }
+}
+
+/* 平板端通知容器 - 顶部居中 */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .el-notification-container {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    padding-top: 20px !important;
+  }
+}
+
+/* 电脑端通知容器 - 右上角 */
+@media (min-width: 1025px) {
+  .el-notification-container {
+    display: flex !important;
+    justify-content: flex-end !important;
+    align-items: flex-start !important;
+    padding-top: 20px !important;
+    padding-right: 20px !important;
   }
 }
 

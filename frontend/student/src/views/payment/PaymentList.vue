@@ -1,5 +1,5 @@
 <template>
-  <div class="payment-list list-page-container">
+  <div class="payment-list list-page-container" v-loading="loading">
     <!-- 筛选栏 -->
     <el-card class="list-page-filter-card">
       <div class="list-page-filter-content">
@@ -11,73 +11,59 @@
           <el-radio-button :label="4">已拒绝</el-radio-button>
         </el-radio-group>
       </div>
-      <div class="list-page-search-content">
-        <el-input
-          v-model="searchKeyword"
-          placeholder="搜索教师姓名、订单号..."
-          clearable
-          @input="handleSearch"
-          class="list-page-search-input"
-        >
-          <template #prefix>
-            <el-icon><Search /></el-icon>
-          </template>
-        </el-input>
-      </div>
     </el-card>
 
     <!-- 支付列表 -->
-    <div class="payments list-page-list-container">
+    <div class="payment-cards list-page-list-container">
       <el-card
-        v-for="payment in filteredPaymentList"
+        v-for="payment in paymentList"
         :key="payment.id"
         class="payment-card list-page-item-card"
         shadow="hover"
-        @click="goToDetail(payment.id)"
+        @click="goPay(payment)"
       >
-        <div class="payment-header">
-          <div class="payment-info">
-            <h3 class="teacher-name">{{ payment.teacherName }}</h3>
-            <el-tag
-              :type="getPaymentStatusType(payment.status)"
-              size="small"
-            >
+        <div class="card-header">
+          <div class="left">
+            <h3 class="teacher">{{ payment.teacherName }}</h3>
+            <el-tag :type="getPaymentStatusType(payment.status)" size="small">
               {{ getPaymentStatusText(payment.status) }}
             </el-tag>
           </div>
-          <div class="payment-amount">
-            <span class="amount-label">支付金额</span>
-            <span class="amount-value">¥{{ payment.amount }}</span>
+        </div>
+
+        <div class="card-body">
+          <div class="row">
+            <span class="label">支付单号</span>
+            <span class="value">{{ payment.paymentNo }}</span>
+          </div>
+          <div class="row">
+            <span class="label">课程时间</span>
+            <span class="value">{{ formatDate(payment.appointmentDate) }}</span>
+          </div>
+          <div class="row">
+            <span class="label">创建时间</span>
+            <span class="value">{{ formatDateTime(payment.createdAt) }}</span>
+          </div>
+          <div class="right">
+            <span class="label">支付金额</span>
+            <span class="amount">¥{{ payment.amount }}</span>
           </div>
         </div>
-        <div class="payment-details">
-          <div class="detail-item">
-            <span class="label">订单号：</span>
-            <span>{{ payment.paymentNo }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="label">课程时间：</span>
-            <span>{{ formatDate(payment.appointmentDate) }}</span>
-          </div>
-          <div class="detail-item">
-            <span class="label">创建时间：</span>
-            <span>{{ formatDateTime(payment.createdAt) }}</span>
-          </div>
-        </div>
-        <div class="payment-actions">
+
+        <div class="card-actions">
           <el-button
             v-if="payment.status === 1"
             type="primary"
             size="small"
-            @click.stop="goToDetail(payment.id)"
+            @click.stop="goPay(payment)"
           >
-            去支付
+            继续支付
           </el-button>
           <el-button
-            type="primary"
-            text
+            v-else
+            type="default"
             size="small"
-            @click.stop="goToDetail(payment.id)"
+            @click.stop="goDetail(payment.id)"
           >
             查看详情
           </el-button>
@@ -85,40 +71,36 @@
       </el-card>
     </div>
 
-    <el-empty v-if="!loading && (!filteredPaymentList || filteredPaymentList.length === 0)" :description="searchKeyword ? '未找到匹配的支付记录' : '暂无支付记录'" />
+    <el-empty
+      v-if="!loading && (!paymentList || paymentList.length === 0)"
+      description="暂无支付订单"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { getPaymentList } from '@/api/payment'
-import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { normalizeApiData, createSearchFilter } from '@/utils/dataHelper'
 import { getStatusText, getStatusType } from '@/utils/statusHelper'
 import { useTimeFormatter } from '@/composables/useTimeFormatter'
+import '@/styles/list-pages.css'
 
 const router = useRouter()
 const { formatDate, formatDateTime } = useTimeFormatter()
 
 const paymentList = ref([])
 const statusFilter = ref('')
-const searchKeyword = ref('')
 const loading = ref(false)
 
 const loadPayments = async () => {
   loading.value = true
   try {
     const params = {}
-    if (statusFilter.value) {
-      params.status = statusFilter.value
-    }
-    if (searchKeyword.value) {
-      params.keyword = searchKeyword.value
-    }
+    if (statusFilter.value) params.status = statusFilter.value
     const data = await getPaymentList(params)
-    paymentList.value = normalizeApiData(data)
+    paymentList.value = data?.list || data || []
   } catch (error) {
     ElMessage.error('加载支付记录失败')
     console.error(error)
@@ -128,24 +110,11 @@ const loadPayments = async () => {
   }
 }
 
-// 使用统一的状态处理函数
 const getPaymentStatusType = (status) => getStatusType('payment', status)
 const getPaymentStatusText = (status) => getStatusText('payment', status)
 
-const filteredPaymentList = computed(() => {
-  return createSearchFilter(
-    paymentList.value,
-    searchKeyword.value,
-    ['teacherName', 'paymentNo']
-  )
-})
-
-const handleSearch = () => {
-  // 前端过滤已通过 computed 实现
-}
-
-const goToDetail = (id) => {
-  router.push(`/payment/${id}`)
+const goPay = (payment) => {
+  router.push(`/payment/create?paymentId=${payment.id}&appointmentId=${payment.appointmentId}`)
 }
 
 onMounted(() => {
@@ -154,98 +123,100 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.filter-content {
-  display: flex;
-  justify-content: center;
-  margin-bottom: 16px;
+/* 统一样式已通过 @/styles/list-pages.css 引入 */
+
+.payment-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
 }
 
-.search-content {
-  display: flex;
-  justify-content: center;
+.payment-card {
+  border-radius: 16px;
 }
 
-.payment-header {
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #ebeef5;
+  margin-bottom: 12px;
 }
 
-.payment-info {
+.card-header .left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.teacher-name {
-  font-size: 18px;
-  font-weight: bold;
-  color: #303133;
+.teacher {
   margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
 }
 
-.payment-amount {
+.card-header .right {
   text-align: right;
 }
 
-.amount-label {
+.card-header .label {
   display: block;
   font-size: 12px;
-  color: #909399;
-  margin-bottom: 4px;
+  color: #9ca3af;
 }
 
-.amount-value {
-  font-size: 24px;
-  font-weight: bold;
-  color: #f56c6c;
+.amount {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ef4444;
 }
 
-.payment-details {
+.card-body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 16px;
+  margin: 12px 0;
 }
 
-.detail-item {
+.row {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
+  color: #4b5563;
   font-size: 14px;
 }
 
-.label {
-  color: #909399;
+.row .label {
+  color: #9ca3af;
+  margin-right: 8px;
 }
 
-.payment-actions {
+.row .value {
+  color: #374151;
+  font-weight: 500;
+  text-align: right;
+}
+
+.card-actions {
   display: flex;
-  gap: 12px;
   justify-content: flex-end;
+  gap: 10px;
 }
 
 @media (max-width: 767px) {
-  .payment-header {
+  .payment-list {
+    padding: 0 12px;
+  }
+
+  .card-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 12px;
+    gap: 8px;
   }
 
-  .payment-amount {
+  .card-header .right {
+    width: 100%;
     text-align: left;
-    width: 100%;
-  }
-
-  .payment-actions {
-    flex-direction: column;
-  }
-
-  .payment-actions .el-button {
-    width: 100%;
   }
 }
 </style>

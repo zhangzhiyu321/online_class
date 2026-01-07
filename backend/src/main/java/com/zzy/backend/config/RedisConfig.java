@@ -33,7 +33,6 @@ public class RedisConfig {
                 ObjectMapper.DefaultTyping.NON_FINAL
         );
         serializer.setObjectMapper(mapper);
-
         // 使用 StringRedisSerializer 来序列化和反序列化 redis 的 key 值
         template.setKeySerializer(new StringRedisSerializer());
         template.setValueSerializer(serializer);
