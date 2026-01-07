@@ -82,7 +82,12 @@ const router = createRouter({
         {
           path: 'payment/:id',
           name: 'PaymentDetail',
-          component: () => import('@/views/payment/PaymentDetail.vue')
+          component: () => import('@/views/payment/CreatePayment.vue')
+        },
+        {
+          path: 'payment/create',
+          name: 'CreatePayment',
+          component: () => import('@/views/payment/CreatePayment.vue')
         },
         {
           path: 'refunds',

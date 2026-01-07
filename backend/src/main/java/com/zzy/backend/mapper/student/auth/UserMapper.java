@@ -61,5 +61,14 @@ public interface UserMapper {
     int updateLastLogin(@Param("userId") Long userId, 
                        @Param("lastLoginAt") java.time.LocalDateTime lastLoginAt,
                        @Param("lastLoginIp") String lastLoginIp);
+
+    /**
+     * 更新用户头像
+     *
+     * @param userId 用户ID
+     * @param avatarUrl 头像URL
+     * @return 影响行数
+     */
+    int updateAvatar(@Param("userId") Long userId, @Param("avatarUrl") String avatarUrl);
 }
 

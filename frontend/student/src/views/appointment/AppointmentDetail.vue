@@ -172,6 +172,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getAppointmentDetail, cancelAppointment } from '@/api/appointment'
+import { getChatList } from '@/api/chat'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import '@/styles/appointment-buttons.css'
@@ -246,12 +247,34 @@ const handleCancel = async () => {
   }
 }
 
-const goToChat = () => {
-  router.push(`/chats?teacherId=${appointmentInfo.value.teacherId}`)
+const goToChat = async () => {
+  if (!appointmentInfo.value.teacherId) {
+    ElMessage.error('教师ID无效')
+    return
+  }
+  
+  try {
+    // 先检查是否已有聊天关系
+    const chatList = await getChatList()
+    const chats = Array.isArray(chatList) ? chatList : (chatList?.list || [])
+    const existingChat = chats.find(chat => chat.otherUserId === parseInt(appointmentInfo.value.teacherId))
+    
+    if (existingChat && existingChat.relationshipId) {
+      // 如果已有聊天关系，直接跳转到聊天窗口
+      router.push(`/chat/${existingChat.relationshipId}`)
+    } else {
+      // 如果没有聊天关系，跳转到新聊天页面
+      router.push(`/chat/new?teacherId=${appointmentInfo.value.teacherId}`)
+    }
+  } catch (error) {
+    console.error('检查聊天关系失败:', error)
+    // 如果检查失败，直接跳转到新聊天页面
+    router.push(`/chat/new?teacherId=${appointmentInfo.value.teacherId}`)
+  }
 }
 
 const goToPayment = () => {
-  router.push(`/payments?appointmentId=${appointmentId.value}`)
+  router.push(`/payment/create?appointmentId=${appointmentId.value}`)
 }
 
 const goToReview = () => {
