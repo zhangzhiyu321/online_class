@@ -79,7 +79,6 @@ aliyun.oss.url-prefix=https://your-bucket-name.oss-cn-hangzhou.aliyuncs.com
 # ============================================
 sms.provider=tencent
 # 腾讯云短信配置（从腾讯云控制台获取）
-# 请通过环境变量设置，不要在此文件中硬编码真实密钥
 sms.tencent.secret-id=${TENCENT_SECRET_ID:your-secret-id}
 sms.tencent.secret-key=${TENCENT_SECRET_KEY:your-secret-key}
 sms.tencent.app-id=${TENCENT_APP_ID:your-app-id}

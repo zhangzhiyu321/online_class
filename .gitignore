@@ -48,3 +48,34 @@ local.properties
 # Application
 application-local.properties
 application-dev.properties
+application-prod.properties
+application-secret.properties
+*.secret.properties
+
+# 敏感配置文件（包含真实密钥的本地配置文件）
+# 注意：application.properties 已使用环境变量占位符，可以提交到仓库
+# application.properties.example 作为模板文件已提交
+# 如果需要在本地覆盖配置，请使用 application-local.properties（已被忽略）
+
+# 证书和密钥文件
+*.p12
+*.pem
+*.key
+*.crt
+*.jks
+*.keystore
+*.truststore
+**/cert/
+**/certs/
+**/keys/
+**/secrets/
+
+# 环境变量文件
+.env
+.env.local
+.env.*.local
+*.env
+
+# 上传文件目录
+backend/uploads/
+backend/static/upload/
