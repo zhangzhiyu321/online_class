@@ -2,6 +2,7 @@ package com.zzy.backend.service.student.payment.impl;
 
 import com.zzy.backend.common.exception.BusinessException;
 import com.zzy.backend.common.page.PageResult;
+import com.zzy.backend.common.util.OrderNoGenerator;
 import com.zzy.backend.dto.request.student.payment.CreatePaymentRequest;
 import com.zzy.backend.dto.request.student.payment.PaymentListRequest;
 import com.zzy.backend.dto.request.student.payment.UploadPaymentProofRequest;
@@ -19,11 +20,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Random;
 
 /**
  * 支付服务实现类
@@ -40,11 +38,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Autowired
     private TeacherMapper teacherMapper;
-
-    /**
-     * 日期格式化器
-     */
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -76,7 +69,7 @@ public class PaymentServiceImpl implements PaymentService {
         }
 
         // 5. 生成支付单号
-        String paymentNo = generatePaymentNo();
+        String paymentNo = OrderNoGenerator.generatePaymentOrderNo();
 
         // 6. 检查支付单号是否已存在（理论上不会重复，但为了安全起见）
         Payment existingByNo = paymentMapper.selectByPaymentNo(paymentNo);
@@ -149,17 +142,6 @@ public class PaymentServiceImpl implements PaymentService {
         return response;
     }
 
-    /**
-     * 生成支付单号
-     * 格式：PAY + yyyyMMdd + 5位随机数
-     * 例如：PAY2024012012345
-     */
-    private String generatePaymentNo() {
-        String dateStr = LocalDate.now().format(DATE_FORMATTER);
-        Random random = new Random();
-        int randomNum = random.nextInt(90000) + 10000; // 生成5位随机数
-        return "PAY" + dateStr + randomNum;
-    }
 
     /**
      * 获取预约状态文本

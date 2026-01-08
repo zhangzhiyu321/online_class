@@ -3,6 +3,9 @@ package com.zzy.backend.controller.common;
 import com.zzy.backend.common.Result;
 import com.zzy.backend.common.constant.ResponseCode;
 import com.zzy.backend.common.exception.BusinessException;
+import com.zzy.backend.dto.response.common.SubjectResponse;
+import com.zzy.backend.dto.response.common.TeachingStageResponse;
+import com.zzy.backend.service.common.CommonService;
 import com.zzy.backend.service.common.FileUploadService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -13,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,6 +30,9 @@ public class CommonController {
 
     @Autowired
     private FileUploadService fileUploadService;
+
+    @Autowired
+    private CommonService commonService;
 
     /**
      * 文件上传
@@ -60,6 +67,42 @@ public class CommonController {
         } catch (Exception e) {
             log.error("文件上传失败", e);
             return Result.error("文件上传失败，请稍后重试");
+        }
+    }
+
+    /**
+     * 获取教学阶段列表
+     *
+     * @return 教学阶段列表
+     */
+    @GetMapping("/teaching-stages")
+    @Operation(summary = "获取教学阶段列表", description = "获取所有启用的教学阶段列表，用于下拉框选择")
+    public Result<List<TeachingStageResponse>> getTeachingStages() {
+        log.info("获取教学阶段列表");
+        try {
+            List<TeachingStageResponse> stages = commonService.getTeachingStages();
+            return Result.success("获取成功", stages);
+        } catch (Exception e) {
+            log.error("获取教学阶段列表失败", e);
+            return Result.error("获取教学阶段列表失败，请稍后重试");
+        }
+    }
+
+    /**
+     * 获取科目列表
+     *
+     * @return 科目列表
+     */
+    @GetMapping("/subjects")
+    @Operation(summary = "获取科目列表", description = "获取所有启用的科目列表，用于下拉框选择")
+    public Result<List<SubjectResponse>> getSubjects() {
+        log.info("获取科目列表");
+        try {
+            List<SubjectResponse> subjects = commonService.getSubjects();
+            return Result.success("获取成功", subjects);
+        } catch (Exception e) {
+            log.error("获取科目列表失败", e);
+            return Result.error("获取科目列表失败，请稍后重试");
         }
     }
 }

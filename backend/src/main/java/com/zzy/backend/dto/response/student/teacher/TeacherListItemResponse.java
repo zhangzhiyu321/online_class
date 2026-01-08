@@ -1,5 +1,6 @@
 package com.zzy.backend.dto.response.student.teacher;
 
+import com.zzy.backend.dto.response.common.SubjectResponse;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;

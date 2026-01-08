@@ -17,9 +17,12 @@
     </resultMap>
 
     <!-- 科目结果映射 -->
-    <resultMap id="SubjectResultMap" type="com.zzy.backend.dto.response.student.teacher.SubjectResponse">
+    <resultMap id="SubjectResultMap" type="com.zzy.backend.dto.response.common.SubjectResponse">
         <id property="id" column="id"/>
+        <result property="code" column="code"/>
         <result property="name" column="name"/>
+        <result property="category" column="category"/>
+        <result property="sortOrder" column="sort_order"/>
     </resultMap>
 
     <!-- 教师详情结果映射 -->
@@ -38,9 +41,11 @@
     </resultMap>
 
     <!-- 阶段结果映射 -->
-    <resultMap id="StageResultMap" type="com.zzy.backend.dto.response.student.teacher.StageResponse">
+    <resultMap id="StageResultMap" type="com.zzy.backend.dto.response.common.TeachingStageResponse">
         <id property="id" column="id"/>
+        <result property="code" column="code"/>
         <result property="name" column="name"/>
+        <result property="sortOrder" column="sort_order"/>
     </resultMap>
 
     <!-- 教学信息结果映射 -->
@@ -228,7 +233,7 @@
 
     <!-- 查询教师的科目列表 -->
     <select id="selectTeacherSubjects" resultMap="SubjectResultMap">
-        SELECT DISTINCT s.id, s.name, s.sort_order
+        SELECT DISTINCT s.id, s.code, s.name, s.category, s.sort_order
         FROM teacher_teachings tt
         INNER JOIN subjects s ON tt.subject_id = s.id
         WHERE tt.user_id = #{userId}
@@ -287,7 +292,7 @@
 
     <!-- 查询教师的教学阶段列表 -->
     <select id="selectTeacherStages" resultMap="StageResultMap">
-        SELECT DISTINCT s.id, s.name, s.sort_order
+        SELECT DISTINCT s.id, s.code, s.name, s.sort_order
         FROM teacher_teachings tt
         INNER JOIN teaching_stages s ON tt.stage_id = s.id
         WHERE tt.user_id = #{userId}
