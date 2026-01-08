@@ -275,6 +275,77 @@ public class PaymentServiceImpl implements PaymentService {
         return true;
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean autoConfirmPayment(String paymentNo, String thirdPartyOrderNo, Integer paymentMethod) {
+        log.info("自动确认支付, paymentNo: {}, thirdPartyOrderNo: {}, paymentMethod: {}", paymentNo, thirdPartyOrderNo, paymentMethod);
+
+        // 1. 查询支付记录
+        Payment payment = paymentMapper.selectByPaymentNo(paymentNo);
+        if (payment == null) {
+            log.warn("支付记录不存在, paymentNo: {}", paymentNo);
+            return false;
+        }
+
+        // 2. 验证支付方式（只允许支付宝和微信自动确认）
+        if (paymentMethod != 2 && paymentMethod != 3) {
+            log.warn("支付方式不支持自动确认, paymentMethod: {}", paymentMethod);
+            return false;
+        }
+
+        // 3. 验证支付方式是否匹配
+        if (!payment.getPaymentMethod().equals(paymentMethod)) {
+            log.warn("支付方式不匹配, paymentMethod: {}, expected: {}", payment.getPaymentMethod(), paymentMethod);
+            return false;
+        }
+
+        // 4. 验证状态（只有待支付状态才能自动确认）
+        if (payment.getStatus() != 1) {
+            log.warn("支付状态不允许自动确认, paymentNo: {}, status: {}", paymentNo, payment.getStatus());
+            return false;
+        }
+
+        // 5. 更新支付状态为已完成，记录第三方订单号和确认信息
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 将第三方订单号存储到extra字段（JSON格式）
+        String extra = String.format("{\"thirdPartyOrderNo\":\"%s\",\"autoConfirmed\":true}", thirdPartyOrderNo);
+        
+        int result = paymentMapper.autoConfirmPayment(
+                payment.getId(),
+                3, // 已完成状态
+                now, // 确认时间
+                null, // 自动确认，确认人为null（表示系统自动确认）
+                extra
+        );
+
+        if (result <= 0) {
+            log.error("自动确认支付失败, paymentNo: {}", paymentNo);
+            return false;
+        }
+
+        log.info("自动确认支付成功, paymentNo: {}, paymentId: {}", paymentNo, payment.getId());
+        return true;
+    }
+
+    @Override
+    public PaymentDetailResponse queryPaymentStatus(String paymentNo) {
+        log.info("查询支付状态, paymentNo: {}", paymentNo);
+        
+        Payment payment = paymentMapper.selectByPaymentNo(paymentNo);
+        if (payment == null) {
+            return null;
+        }
+        
+        return paymentMapper.selectPaymentDetail(payment.getId(), payment.getStudentId());
+    }
+
+    @Override
+    public List<Payment> listPendingOnlinePayments(Integer paymentMethod, Integer limit) {
+        log.info("查询待支付的在线支付订单, paymentMethod: {}, limit: {}", paymentMethod, limit);
+        return paymentMapper.selectPendingOnlinePayments(paymentMethod, limit);
+    }
+
     /**
      * 获取状态文本
      */

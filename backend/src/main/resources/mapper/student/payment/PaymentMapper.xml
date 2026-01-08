@@ -241,5 +241,28 @@
           AND deleted_at IS NULL
     </update>
 
+    <!-- 自动确认支付 -->
+    <update id="autoConfirmPayment">
+        UPDATE payments
+        SET status = #{status},
+            confirmed_at = #{confirmedAt},
+            confirmed_by = #{confirmedBy},
+            extra = #{extra},
+            updated_at = NOW()
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </update>
+
+    <!-- 查询待支付的在线支付订单 -->
+    <select id="selectPendingOnlinePayments" resultMap="PaymentResultMap">
+        SELECT *
+        FROM payments
+        WHERE payment_method = #{paymentMethod}
+          AND status = 1
+          AND deleted_at IS NULL
+        ORDER BY created_at ASC
+        LIMIT #{limit}
+    </select>
+
 </mapper>
 

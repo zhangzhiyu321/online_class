@@ -96,5 +96,31 @@ public interface PaymentMapper {
      * @return 影响行数
      */
     int updatePaymentMethod(@Param("id") Long id, @Param("paymentMethod") Integer paymentMethod);
+
+    /**
+     * 自动确认支付
+     *
+     * @param id 支付ID
+     * @param status 支付状态（3-已完成）
+     * @param confirmedAt 确认时间
+     * @param confirmedBy 确认人ID（null表示系统自动确认）
+     * @param extra 扩展信息（JSON格式，包含第三方订单号）
+     * @return 影响行数
+     */
+    int autoConfirmPayment(@Param("id") Long id,
+                          @Param("status") Integer status,
+                          @Param("confirmedAt") java.time.LocalDateTime confirmedAt,
+                          @Param("confirmedBy") Long confirmedBy,
+                          @Param("extra") String extra);
+
+    /**
+     * 查询待支付的在线支付订单（支付宝/微信）
+     *
+     * @param paymentMethod 支付方式：2-支付宝，3-微信
+     * @param limit 查询数量限制
+     * @return 支付记录列表
+     */
+    List<Payment> selectPendingOnlinePayments(@Param("paymentMethod") Integer paymentMethod,
+                                             @Param("limit") Integer limit);
 }
 

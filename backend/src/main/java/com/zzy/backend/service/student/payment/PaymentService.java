@@ -7,6 +7,9 @@ import com.zzy.backend.dto.request.student.payment.UploadPaymentProofRequest;
 import com.zzy.backend.dto.response.student.payment.CreatePaymentResponse;
 import com.zzy.backend.dto.response.student.payment.PaymentDetailResponse;
 import com.zzy.backend.dto.response.student.payment.PaymentListItemResponse;
+import com.zzy.backend.entity.student.Payment;
+
+import java.util.List;
 
 /**
  * 支付服务接口
@@ -59,5 +62,32 @@ public interface PaymentService {
      * @return 是否成功
      */
     boolean updatePaymentMethod(Long id, Integer paymentMethod, Long studentId);
+
+    /**
+     * 自动确认支付（系统自动确认，用于支付宝/微信支付回调）
+     *
+     * @param paymentNo 支付单号
+     * @param thirdPartyOrderNo 第三方订单号（支付宝/微信订单号）
+     * @param paymentMethod 支付方式：2-支付宝，3-微信
+     * @return 是否成功
+     */
+    boolean autoConfirmPayment(String paymentNo, String thirdPartyOrderNo, Integer paymentMethod);
+
+    /**
+     * 查询支付状态（用于定时任务轮询和前端查询）
+     * 
+     * @param paymentNo 支付单号
+     * @return 支付记录详情
+     */
+    PaymentDetailResponse queryPaymentStatus(String paymentNo);
+
+    /**
+     * 查询待支付的支付宝/微信订单（用于定时任务）
+     * 
+     * @param paymentMethod 支付方式：2-支付宝，3-微信
+     * @param limit 查询数量限制
+     * @return 支付记录列表
+     */
+    List<Payment> listPendingOnlinePayments(Integer paymentMethod, Integer limit);
 }
 
