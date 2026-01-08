@@ -2,6 +2,8 @@ package com.zzy.backend.service.student.teacher.impl;
 
 import com.zzy.backend.common.page.PageResult;
 import com.zzy.backend.dto.request.student.teacher.TeacherListRequest;
+import com.zzy.backend.dto.response.common.SubjectResponse;
+import com.zzy.backend.dto.response.common.TeachingStageResponse;
 import com.zzy.backend.dto.response.student.teacher.*;
 import com.zzy.backend.mapper.student.teacher.TeacherMapper;
 import com.zzy.backend.service.student.teacher.TeacherService;
@@ -54,7 +56,7 @@ public class TeacherServiceImpl implements TeacherService {
         }
 
         // 查询教学阶段列表
-        List<StageResponse> stages = teacherMapper.selectTeacherStages(userId);
+        List<TeachingStageResponse> stages = teacherMapper.selectTeacherStages(userId);
         detail.setStages(stages);
 
         // 查询教学信息列表

@@ -33,16 +33,6 @@ public class AppointmentServiceImpl implements AppointmentService {
     @Autowired
     private AppointmentMapper appointmentMapper;
 
-    /**
-     * 日期格式化器
-     */
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    
-    /**
-     * 时间格式化器
-     */
-    private static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern("HH:mm");
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public CreateAppointmentResponse createAppointment(CreateAppointmentRequest request, Long studentId) {
@@ -52,14 +42,7 @@ public class AppointmentServiceImpl implements AppointmentService {
         validateRequest(request);
 
         // 2. 生成订单号
-        String orderNo = generateOrderNo();
-
-        // 3. 检查订单号是否已存在（理论上不会重复，但为了安全起见）
-        Appointment existingAppointment = appointmentMapper.selectByOrderNo(orderNo);
-        if (existingAppointment != null) {
-            // 如果订单号重复，重新生成
-            orderNo = generateOrderNo();
-        }
+        String orderNo = OrderNoGenerator.generateAppointmentOrderNo();
 
         // 4. 构建预约实体
         Appointment appointment = new Appointment();
@@ -70,9 +53,9 @@ public class AppointmentServiceImpl implements AppointmentService {
         appointment.setSubjectId(request.getSubjectId());
         
         // 解析日期和时间
-        appointment.setAppointmentDate(LocalDate.parse(request.getAppointmentDate(), DATE_FORMATTER));
-        appointment.setStartTime(LocalTime.parse(request.getStartTime(), TIME_FORMATTER));
-        appointment.setEndTime(LocalTime.parse(request.getEndTime(), TIME_FORMATTER));
+        appointment.setAppointmentDate(DateTimeUtil.parseDate(request.getAppointmentDate()));
+        appointment.setStartTime(DateTimeUtil.parseTimeShort(request.getStartTime()));
+        appointment.setEndTime(DateTimeUtil.parseTimeShort(request.getEndTime()));
         
         appointment.setDuration(request.getDuration());
         appointment.setPricePerHour(request.getPricePerHour());
@@ -226,16 +209,5 @@ public class AppointmentServiceImpl implements AppointmentService {
         return true;
     }
 
-    /**
-     * 生成订单号
-     * 格式：APT + yyyyMMdd + 5位随机数
-     * 例如：APT2024012012345
-     */
-    private String generateOrderNo() {
-        String dateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        Random random = new Random();
-        int randomNum = random.nextInt(90000) + 10000; // 生成5位随机数
-        return "APT" + dateStr + randomNum;
-    }
 }
 

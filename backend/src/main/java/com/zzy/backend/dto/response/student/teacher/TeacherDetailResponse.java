@@ -1,5 +1,7 @@
 package com.zzy.backend.dto.response.student.teacher;
 
+import com.zzy.backend.dto.response.common.SubjectResponse;
+import com.zzy.backend.dto.response.common.TeachingStageResponse;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.util.List;
@@ -67,7 +69,7 @@ public class TeacherDetailResponse {
     /**
      * 教学阶段列表
      */
-    private List<StageResponse> stages;
+    private List<TeachingStageResponse> stages;
 
     /**
      * 教学信息列表

@@ -98,7 +98,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             Path basePath = getAbsoluteUploadPath();
             
             // 生成文件存储路径
-            String dateDir = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+            String dateDir = DateTimeUtil.formatDatePath(LocalDateTime.now().toLocalDate());
             String fileName = generateFileName(file.getOriginalFilename());
             String relativePath = type + "/" + dateDir + "/" + fileName;
             Path fullPath = basePath.resolve(relativePath).normalize();
