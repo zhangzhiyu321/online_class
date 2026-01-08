@@ -2,6 +2,8 @@ package com.zzy.backend.service.student.appointment.impl;
 
 import com.zzy.backend.common.exception.BusinessException;
 import com.zzy.backend.common.page.PageResult;
+import com.zzy.backend.common.util.DateTimeUtil;
+import com.zzy.backend.common.util.OrderNoGenerator;
 import com.zzy.backend.dto.request.student.appointment.AppointmentListRequest;
 import com.zzy.backend.dto.request.student.appointment.CancelAppointmentRequest;
 import com.zzy.backend.dto.request.student.appointment.CreateAppointmentRequest;
@@ -19,9 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Random;
 
 /**
  * 预约服务实现类
@@ -99,7 +99,10 @@ public class AppointmentServiceImpl implements AppointmentService {
      */
     private void validateRequest(CreateAppointmentRequest request) {
         // 验证日期不能是过去（允许今天）
-        LocalDate appointmentDate = LocalDate.parse(request.getAppointmentDate(), DATE_FORMATTER);
+        LocalDate appointmentDate = DateTimeUtil.parseDate(request.getAppointmentDate());
+        if (appointmentDate == null) {
+            throw new BusinessException("预约日期格式不正确");
+        }
         LocalDate today = LocalDate.now();
         if (appointmentDate.isBefore(today)) {
             throw new BusinessException("预约日期不能是过去的时间");
@@ -107,7 +110,10 @@ public class AppointmentServiceImpl implements AppointmentService {
         
         // 如果选择的是今天，需要验证时间是否已过
         if (appointmentDate.equals(today)) {
-            LocalTime startTime = LocalTime.parse(request.getStartTime(), TIME_FORMATTER);
+            LocalTime startTime = DateTimeUtil.parseTimeShort(request.getStartTime());
+            if (startTime == null) {
+                throw new BusinessException("开始时间格式不正确");
+            }
             LocalTime now = LocalTime.now();
             if (startTime.isBefore(now)) {
                 throw new BusinessException("预约开始时间不能是过去的时间");
@@ -115,8 +121,11 @@ public class AppointmentServiceImpl implements AppointmentService {
         }
 
         // 验证时间段的合理性
-        LocalTime startTime = LocalTime.parse(request.getStartTime(), TIME_FORMATTER);
-        LocalTime endTime = LocalTime.parse(request.getEndTime(), TIME_FORMATTER);
+        LocalTime startTime = DateTimeUtil.parseTimeShort(request.getStartTime());
+        LocalTime endTime = DateTimeUtil.parseTimeShort(request.getEndTime());
+        if (startTime == null || endTime == null) {
+            throw new BusinessException("时间格式不正确");
+        }
         if (!endTime.isAfter(startTime)) {
             throw new BusinessException("结束时间必须晚于开始时间");
         }

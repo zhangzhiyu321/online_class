@@ -68,15 +68,19 @@ public class PaymentServiceImpl implements PaymentService {
             return buildCreatePaymentResponse(existingPayment, appointment);
         }
 
-        // 5. 生成支付单号
-        String paymentNo = OrderNoGenerator.generatePaymentOrderNo();
-
-        // 6. 检查支付单号是否已存在（理论上不会重复，但为了安全起见）
-        Payment existingByNo = paymentMapper.selectByPaymentNo(paymentNo);
-        if (existingByNo != null) {
-            // 如果支付单号重复，重新生成
-            paymentNo = generatePaymentNo();
-        }
+        // 5. 生成支付单号（循环生成直到不重复，理论上不会重复，但为了安全起见）
+        String paymentNo;
+        Payment existingByNo;
+        int maxRetries = 10; // 最多重试10次，避免无限循环
+        int retryCount = 0;
+        do {
+            paymentNo = OrderNoGenerator.generatePaymentOrderNo();
+            existingByNo = paymentMapper.selectByPaymentNo(paymentNo);
+            retryCount++;
+            if (retryCount >= maxRetries) {
+                throw new BusinessException("生成支付单号失败，请稍后重试");
+            }
+        } while (existingByNo != null);
 
         // 7. 构建支付实体
         Payment payment = new Payment();
