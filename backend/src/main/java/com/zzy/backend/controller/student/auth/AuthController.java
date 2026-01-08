@@ -4,8 +4,11 @@ import com.zzy.backend.common.Result;
 import com.zzy.backend.common.constant.ResponseCode;
 import com.zzy.backend.common.exception.BusinessException;
 import com.zzy.backend.dto.request.student.auth.LoginRequest;
+import com.zzy.backend.dto.request.student.auth.PhoneLoginRequest;
 import com.zzy.backend.dto.request.student.auth.RegisterRequest;
+import com.zzy.backend.dto.request.student.auth.SendSmsCodeRequest;
 import com.zzy.backend.dto.response.student.auth.LoginResponse;
+import com.zzy.backend.service.common.SmsService;
 import com.zzy.backend.service.student.auth.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +29,9 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private SmsService smsService;
 
     /**
      * 用户登录
@@ -76,6 +82,73 @@ public class AuthController {
         } catch (Exception e) {
             log.error("注册失败", e);
             return Result.<Void>error("注册失败，请稍后重试");
+        }
+    }
+
+    /**
+     * 发送短信验证码
+     *
+     * @param request 发送验证码请求
+     * @param httpRequest HTTP请求对象
+     * @return 发送结果
+     */
+    @PostMapping("/sms/send")
+    @Operation(summary = "发送短信验证码", description = "向指定手机号发送6位数字验证码，1分钟内只能发送一次")
+    public Result<Void> sendSmsCode(
+            @Valid @RequestBody SendSmsCodeRequest request,
+            HttpServletRequest httpRequest) {
+        log.info("发送短信验证码请求, phone: {}", request.getPhone());
+
+        try {
+            // 获取客户端IP
+            String clientIp = getClientIp(httpRequest);
+            
+            // 发送验证码
+            String code = smsService.sendVerificationCode(request.getPhone(), clientIp);
+            
+            // 开发环境返回验证码（方便测试），生产环境不返回
+            if (code != null) {
+                log.info("开发环境：验证码为 {}", code);
+                return Result.success("验证码已发送（开发环境：" + code + "）", null);
+            }
+            
+            return Result.success("验证码已发送", null);
+        } catch (BusinessException e) {
+            log.error("发送验证码失败: {}", e.getMessage());
+            return Result.error(ResponseCode.BUSINESS_ERROR, e.getMessage());
+        } catch (Exception e) {
+            log.error("发送验证码失败", e);
+            return Result.error("发送验证码失败，请稍后重试");
+        }
+    }
+
+    /**
+     * 手机号验证码登录
+     *
+     * @param request 手机号登录请求
+     * @param httpRequest HTTP请求对象
+     * @return 登录响应
+     */
+    @PostMapping("/login/phone")
+    @Operation(summary = "手机号验证码登录", description = "使用手机号和验证码登录，如果手机号未注册则自动注册")
+    public Result<LoginResponse> phoneLogin(
+            @Valid @RequestBody PhoneLoginRequest phoneLoginRequest,
+            HttpServletRequest httpRequest) {
+        log.info("手机号登录请求, phone: {}", phoneLoginRequest.getPhone());
+
+        try {
+            // 获取客户端IP
+            String clientIp = getClientIp(httpRequest);
+            
+            // 手机号登录（如果未注册则自动注册）
+            LoginResponse response = authService.phoneLogin(phoneLoginRequest, clientIp);
+            return Result.success("登录成功", response);
+        } catch (BusinessException e) {
+            log.error("手机号登录失败: {}", e.getMessage());
+            return Result.error(ResponseCode.BUSINESS_ERROR, e.getMessage());
+        } catch (Exception e) {
+            log.error("手机号登录失败", e);
+            return Result.error("登录失败，请稍后重试");
         }
     }
 

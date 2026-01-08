@@ -141,6 +141,14 @@
             <version>3.17.4</version>
         </dependency>
         
+        <!-- 腾讯云短信 SDK -->
+        <!-- 使用完整的腾讯云SDK（推荐），包含所有服务模块 -->
+        <dependency>
+            <groupId>com.tencentcloudapi</groupId>
+            <artifactId>tencentcloud-sdk-java</artifactId>
+            <version>3.1.854</version>
+        </dependency>
+        
         <!-- Knife4j API 文档 -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
@@ -169,11 +177,11 @@
     </dependencies>
 
     <repositories>
-        <!-- 阿里云 Maven 仓库 -->
+        <!-- Maven 中央仓库（优先，确保能下载腾讯云SDK） -->
         <repository>
-            <id>aliyun</id>
-            <name>Aliyun Maven</name>
-            <url>https://maven.aliyun.com/repository/public</url>
+            <id>central</id>
+            <name>Maven Central</name>
+            <url>https://repo1.maven.org/maven2</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -181,11 +189,11 @@
                 <enabled>false</enabled>
             </snapshots>
         </repository>
-        <!-- Maven 中央仓库（备用） -->
+        <!-- 阿里云 Maven 仓库（备用） -->
         <repository>
-            <id>central</id>
-            <name>Maven Central</name>
-            <url>https://repo1.maven.org/maven2</url>
+            <id>aliyun</id>
+            <name>Aliyun Maven</name>
+            <url>https://maven.aliyun.com/repository/public</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
